@@ -1,0 +1,397 @@
+/* Dagat ta bAI — Landing & app styles */
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
+
+body, html {
+  height: 100%;
+  margin: 0;
+  font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+  background: linear-gradient(180deg, #f0f4f8 0%, #e8eef4 100%);
+  color: #1a1a2e;
+}
+
+/* —— App bar —— */
+.landing-appbar {
+  height: 60px;
+  background: linear-gradient(135deg, #3f51b5 0%, #5c6bc0 100%);
+  box-shadow: 0 2px 12px rgba(63, 81, 181, 0.25);
+  padding: 0 1.25rem;
+}
+
+.landing-appbar .brand {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #fff;
+  text-decoration: none;
+  letter-spacing: -0.02em;
+}
+
+.landing-appbar .brand:hover {
+  color: rgba(255,255,255,0.95);
+}
+
+.landing-appbar .search-box input {
+  padding: 0.5rem 0.875rem;
+  border-radius: 10px;
+  border: none;
+  width: 260px;
+  font-size: 0.9rem;
+  background: rgba(255,255,255,0.95);
+  transition: box-shadow 0.2s;
+}
+
+.landing-appbar .search-box input::placeholder {
+  color: #6b7280;
+}
+
+.landing-appbar .search-box input:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(255,255,255,0.5);
+}
+
+.landing-appbar .user-welcome {
+  font-size: 0.9rem;
+  color: rgba(255,255,255,0.95);
+  font-weight: 500;
+}
+
+.landing-appbar .btn-appbar {
+  padding: 0.4rem 0.9rem;
+  border-radius: 10px;
+  font-weight: 500;
+  font-size: 0.875rem;
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+
+.landing-appbar .btn-appbar:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.landing-appbar .btn-appbar.btn-solid {
+  background: #fff;
+  color: #3f51b5;
+  border: none;
+}
+
+.landing-appbar .btn-appbar.btn-outline-appbar {
+  background: transparent;
+  color: #fff;
+  border: 2px solid rgba(255,255,255,0.8);
+}
+
+.landing-appbar .btn-appbar.btn-outline-appbar:hover {
+  background: rgba(255,255,255,0.15);
+  color: #fff;
+  border-color: #fff;
+}
+
+/* —— Weather widget —— */
+.weather-widget {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: #fff;
+  box-shadow: 0 4px 14px rgba(102, 126, 234, 0.35);
+}
+
+.weather-widget .weather-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  opacity: 0.9;
+}
+
+.weather-widget .weather-location {
+  max-width: 140px;
+}
+
+.weather-widget .weather-icon,
+.weather-widget .weather-emoji {
+  font-size: 2.5rem;
+  line-height: 1;
+}
+
+.weather-widget .weather-temp {
+  font-size: 1.75rem;
+  line-height: 1.2;
+}
+
+.weather-widget .weather-desc {
+  text-transform: capitalize;
+  opacity: 0.95;
+}
+
+.weather-widget .weather-meta {
+  opacity: 0.85;
+}
+
+.weather-widget .weather-loading.hidden,
+.weather-widget .weather-error.hidden {
+  display: none !important;
+}
+
+/* —— Main layout —— */
+.landing-main {
+  height: calc(100vh - 60px);
+  overflow: hidden;
+  padding: 1rem;
+  box-sizing: border-box;
+}
+
+/* —— Sidebar / filters —— */
+.landing-sidebar {
+  display: flex;
+  flex-direction: column;
+  position: fixed;
+  left: 1rem;
+  top: 76px;
+  bottom: 1rem;
+  width: 400px;
+  max-width: calc(100vw - 2rem);
+  z-index: 10;
+  background: #fff;
+  border-radius: 14px;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+  overflow: hidden;
+}
+
+.landing-filters {
+  padding: 1rem 1rem;
+  border-bottom: 1px solid #e2e8f0;
+  background: #fafbfc;
+  flex-shrink: 0;
+  display: flex;
+  gap: 0.6rem;
+  align-items: flex-end;
+  flex-wrap: nowrap;
+}
+
+.landing-filters > div {
+  display: flex;
+  flex-direction: column;
+  flex: 0 1 auto;
+}
+
+.landing-filters .filter-label {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 0.5rem;
+}
+
+.landing-filters .form-select {
+  border-radius: 8px;
+  border: 1.5px solid #d1d5db;
+  font-size: 0.9rem;
+  padding: 0.5rem 0.75rem;
+  background-color: #fff;
+  transition: all 0.2s ease;
+  min-width: 110px;
+  height: auto;
+  flex-shrink: 1;
+}
+
+.landing-filters .form-select:hover {
+  border-color: #9ca3af;
+}
+
+.landing-filters .form-select:focus {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+  outline: none;
+}
+
+.landing-filters .btn-locate {
+  padding: 0.5rem 0.9rem;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 0.85rem;
+  border: 2px solid #2563eb;
+  color: #2563eb;
+  background: #fff;
+  transition: all 0.3s ease;
+  white-space: nowrap;
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
+.landing-filters .btn-locate:hover {
+  background: #2563eb;
+  color: #fff;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+}
+
+.landing-cards-wrap {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  padding: 1rem;
+  -webkit-overflow-scrolling: touch;
+}
+
+.landing-cards-wrap .card {
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+  border: 1px solid rgba(0,0,0,0.04);
+  margin-bottom: 1rem;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.landing-cards-wrap .card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.1);
+}
+
+.landing-cards-wrap .card-photo {
+  height: 200px;
+  object-fit: cover;
+  background: linear-gradient(135deg, #e0e7ff 0%, #c7d2fe 100%);
+}
+
+.landing-cards-wrap .card-body {
+  padding: 1rem 1.25rem;
+}
+
+.landing-cards-wrap .card-title {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #1a1a2e;
+  margin-bottom: 0.35rem;
+}
+
+.landing-cards-wrap .rating {
+  color: #f59e0b;
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
+.landing-cards-wrap .card-text {
+  font-size: 0.875rem;
+  color: #64748b;
+  line-height: 1.45;
+}
+
+.landing-cards-wrap .btn-view-details,
+.landing-cards-wrap .btn-focus-map {
+  border-radius: 8px;
+  font-weight: 500;
+  font-size: 0.85rem;
+}
+
+/* —— Map —— */
+.landing-map-wrap {
+  margin-left: 416px;
+  height: calc(100vh - 76px);
+  padding-left: 1rem;
+}
+
+.landing-map-wrap #map {
+  height: 100%;
+  width: 100%;
+  border-radius: 14px;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+  border: 1px solid rgba(0,0,0,0.06);
+  background: #e8eef8;
+}
+
+/* Leaflet popups */
+.leaflet-popup-content img {
+  width: 120px;
+  height: 80px;
+  object-fit: cover;
+  border-radius: 8px;
+  margin-right: 10px;
+}
+
+.leaflet-popup-content .title {
+  font-weight: 700;
+  font-size: 0.95rem;
+  color: #1a1a2e;
+}
+
+/* —— Modal —— */
+.landing-modal .modal-content {
+  border-radius: 16px;
+  border: none;
+  box-shadow: 0 24px 48px rgba(0,0,0,0.12);
+  overflow: hidden;
+}
+
+.landing-modal .modal-header {
+  padding: 1.25rem 1.5rem;
+  border-bottom: 1px solid #eee;
+  background: #fafbfc;
+}
+
+.landing-modal .modal-title {
+  font-weight: 700;
+  font-size: 1.2rem;
+  color: #1a1a2e;
+}
+
+.landing-modal .modal-body {
+  padding: 1.5rem;
+}
+
+.landing-modal .modal-body img {
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+}
+
+.landing-modal .modal-footer {
+  padding: 1rem 1.5rem;
+  border-top: 1px solid #eee;
+}
+
+.landing-modal .btn-secondary {
+  border-radius: 10px;
+  font-weight: 500;
+}
+
+.landing-modal .detail-weather {
+  background: linear-gradient(135deg, #f0f4ff 0%, #e8eeff 100%);
+  border: 1px solid rgba(99, 102, 241, 0.15);
+}
+
+.landing-modal .detail-weather-emoji {
+  font-size: 2rem;
+  line-height: 1;
+}
+
+/* Empty state when no places */
+.landing-empty-state {
+  text-align: center;
+  padding: 3rem 1.5rem;
+  color: #64748b;
+  font-size: 0.95rem;
+  line-height: 1.6;
+}
+
+/* —— Responsive —— */
+@media (max-width: 991px) {
+  .landing-sidebar {
+    position: static;
+    width: 100%;
+    max-height: 45vh;
+  }
+
+  .landing-map-wrap {
+    margin-left: 0;
+    height: 50vh;
+    min-height: 320px;
+    padding-left: 0;
+    padding-top: 0.5rem;
+  }
+}
+
+@media (max-width: 576px) {
+  .landing-appbar .search-box input {
+    width: 160px;
+  }
+
+  .landing-appbar .user-welcome {
+    display: none;
+  }
+}
