@@ -1,57 +1,145 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-theme="dark">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Log in — Dagat ta bAI</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="/auth.css">
+    <link rel="stylesheet" href="/css/register.css">
   </head>
-  <body class="auth-page">
-    <header class="auth-appbar d-flex align-items-center">
-      <a href="/landing" class="brand">Dagat ta bAI</a>
-      <div class="ms-auto">
-        <a href="{{ route('register') }}" class="btn-auth-nav">Sign up</a>
-      </div>
-    </header>
-
-    <main class="auth-main">
-      <div class="auth-card">
-        <div class="auth-card-header">
-          <h1 class="auth-card-title">Log in</h1>
-          <p class="auth-card-subtitle">Welcome back. Sign in to continue.</p>
+  <body>
+    <div class="auth-container">
+      <div class="left-panel">
+        <div class="brand-header">
+          <a href="/landing" class="brand">Dagat Ta <span class="highlight">bAI</span></a>
+          <div class="theme-toggle">
+            <span id="theme-label">Dark</span>
+            <div class="toggle-switch" id="theme-toggle" role="button" tabindex="0" aria-label="Toggle theme"></div>
+          </div>
         </div>
-        <div class="auth-card-body">
+
+        <div class="hero-content">
+          <h1 class="hero-title">Explore the <span class="shores">shores</span><br>of Binongkalan</h1>
+          <p class="hero-subtitle">Your all-in-one guide to commercial beach destinations in Catmon, Cebu — with live maps, weather, and AI assistance.</p>
+
+          <div class="features-list">
+            <div class="feature-item">
+              <div class="feature-icon">🗺️</div>
+              <div class="feature-text">
+                <h4>Interactive Beach Maps</h4>
+                <p>Explore all beach destinations with real-time geospatial data.</p>
+              </div>
+            </div>
+            <div class="feature-item">
+              <div class="feature-icon">🤖</div>
+              <div class="feature-text">
+                <h4>AI Inquiry Assistant</h4>
+                <p>Get instant answers about facilities, directions, and tips.</p>
+              </div>
+            </div>
+            <div class="feature-item">
+              <div class="feature-icon">☀️</div>
+              <div class="feature-text">
+                <h4>Live Weather Analytics</h4>
+                <p>Check real-time forecasts before planning your beach visit.</p>
+              </div>
+            </div>
+            <div class="feature-item">
+              <div class="feature-icon">📌</div>
+              <div class="feature-text">
+                <h4>Save Favorites</h4>
+                <p>Bookmark beaches and revisit your saved destinations anytime.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="footer-location">
+          <span>Binongkalan</span>
+          <span>Catmon</span>
+          <span>Cebu</span>
+        </div>
+      </div>
+
+      <div class="right-panel">
+        <div class="auth-card">
+          <div class="auth-card-header">
+            <h2 class="auth-card-title">Log in</h2>
+            <p class="auth-card-subtitle">Don't have an account? <a href="{{ route('register') }}">Sign up</a></p>
+          </div>
+
           @if ($errors->any())
-            <div class="alert alert-danger py-2 mb-3">
+            <div class="alert alert-danger">
               @foreach ($errors->all() as $err)
                 <div>{{ $err }}</div>
               @endforeach
             </div>
           @endif
+
           <form method="POST" action="{{ route('login') }}">
             @csrf
             <input type="hidden" name="redirect" value="{{ request('redirect', old('redirect', '/landing')) }}">
-            <div class="mb-3">
-              <label for="email" class="form-label">Email</label>
-              <input type="email" class="form-control" id="email" name="email" value="{{ old('email') }}" required autofocus placeholder="you@example.com">
+            <div class="form-group">
+              <label class="form-label" for="email">Email Address</label>
+              <input type="email" class="form-control" id="email" name="email" value="{{ old('email') }}" required autofocus placeholder="you@email.com">
             </div>
-            <div class="mb-3">
-              <label for="password" class="form-label">Password</label>
+
+            <div class="form-group">
+              <label class="form-label" for="password">Password</label>
               <input type="password" class="form-control" id="password" name="password" required placeholder="••••••••">
             </div>
-            <div class="mb-3 form-check">
+
+            <div class="form-check">
               <input type="checkbox" class="form-check-input" id="remember" name="remember">
               <label class="form-check-label" for="remember">Remember me</label>
             </div>
-            <button type="submit" class="btn btn-primary">Log in</button>
+
+            <button type="submit" class="btn-primary">Log in</button>
           </form>
-          <div class="auth-footer">
-            <p>Don't have an account? <a href="{{ route('register') }}">Sign up</a></p>
-          </div>
+
+          <div class="divider">or continue with</div>
+
+          <button type="button" class="btn-google">
+            <svg class="google-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+              <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+              <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+              <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+            </svg>
+            Continue with Google
+          </button>
         </div>
       </div>
-    </main>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    </div>
+
+    <script>
+      const themeToggle = document.getElementById('theme-toggle');
+      const themeLabel = document.getElementById('theme-label');
+      const html = document.documentElement;
+
+      const savedTheme = localStorage.getItem('theme') || 'dark';
+      html.setAttribute('data-theme', savedTheme);
+      updateThemeLabel(savedTheme);
+
+      themeToggle.addEventListener('click', () => {
+        const currentTheme = html.getAttribute('data-theme');
+        const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+        html.setAttribute('data-theme', newTheme);
+        localStorage.setItem('theme', newTheme);
+        updateThemeLabel(newTheme);
+      });
+
+      function updateThemeLabel(theme) {
+        themeLabel.textContent = theme === 'dark' ? 'Dark' : 'Light';
+        themeLabel.style.color = theme === 'dark' ? '#ffd700' : '#f4a460';
+      }
+
+      themeToggle.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          themeToggle.click();
+        }
+      });
+    </script>
   </body>
 </html>

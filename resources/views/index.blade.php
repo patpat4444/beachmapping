@@ -50,12 +50,12 @@
         </div>
       </div>
       
-      <div class="scroll-indicator">
+      <a class="scroll-indicator" href="#features" aria-label="Scroll to explore">
         <span>SCROLL TO EXPLORE</span>
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" focusable="false">
           <path d="M12 5v14M19 12l-7 7-7-7"/>
         </svg>
-      </div>
+      </a>
     </section>
 
     <!-- Floating Theme Toggle -->
