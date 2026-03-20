@@ -217,6 +217,11 @@ document.addEventListener('DOMContentLoaded', function () {
           // Update tide marker position
           updateDetailTideMarker();
         }
+
+        // Update forecast if available
+        if (data.forecast && data.forecast.length > 0) {
+          updateDetailForecastDisplay(data.forecast);
+        }
       })
       .catch(function(err) {
         console.error('Weather fetch error:', err);
@@ -577,6 +582,45 @@ document.addEventListener('DOMContentLoaded', function () {
         '<i class="fa-solid ' + icon + ' forecast-icon"></i>' +
         '<span class="temps">' + day.temp_max + '° / ' + day.temp_min + '°</span>';
       forecastList.appendChild(item);
+    });
+
+    // Also update detail modal forecast
+    updateDetailForecastDisplay(forecast);
+  }
+
+  // Update forecast in detail modal
+  function updateDetailForecastDisplay(forecast) {
+    var detailForecastList = document.getElementById('detail-forecast-list');
+    if (!detailForecastList || !forecast || forecast.length === 0) return;
+
+    // Clear existing forecast
+    detailForecastList.innerHTML = '';
+
+    // Map weather icons
+    var iconMap = {
+      '01d': 'fa-sun', '01n': 'fa-moon',
+      '02d': 'fa-cloud-sun', '02n': 'fa-cloud-moon',
+      '03d': 'fa-cloud', '03n': 'fa-cloud',
+      '04d': 'fa-cloud', '04n': 'fa-cloud',
+      '09d': 'fa-cloud-showers-heavy', '09n': 'fa-cloud-showers-heavy',
+      '10d': 'fa-cloud-rain', '10n': 'fa-cloud-rain',
+      '11d': 'fa-bolt', '11n': 'fa-bolt',
+      '13d': 'fa-snowflake', '13n': 'fa-snowflake',
+      '50d': 'fa-smog', '50n': 'fa-smog'
+    };
+
+    // Show only first 5 days
+    var forecastDays = forecast.slice(0, 5);
+    
+    forecastDays.forEach(function(day) {
+      var icon = iconMap[day.icon] || 'fa-cloud-sun';
+      var item = document.createElement('div');
+      item.className = 'detail-forecast-item';
+      item.innerHTML = 
+        '<div class="detail-forecast-day">' + day.day_name + '</div>' +
+        '<i class="fa-solid ' + icon + ' detail-forecast-icon"></i>' +
+        '<div class="detail-forecast-temps"><span class="detail-forecast-temps-max">' + Math.round(day.temp_max) + '°</span> / ' + Math.round(day.temp_min) + '°</div>';
+      detailForecastList.appendChild(item);
     });
   }
 

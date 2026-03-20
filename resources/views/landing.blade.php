@@ -337,6 +337,13 @@
                       <div id="detail-weather-uv" style="font-size: 0.875rem; font-weight: 600; color: var(--page-text);">—</div>
                     </div>
                   </div>
+                  <!-- 5-Day Forecast -->
+                  <div id="detail-forecast-wrap" style="margin-top: 0.75rem; padding-top: 0.75rem; border-top: 1px solid var(--glass-border);">
+                    <div style="font-size: 0.75rem; color: var(--muted-text); margin-bottom: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em;">5-Day Forecast</div>
+                    <div class="detail-forecast-list" id="detail-forecast-list" style="display: flex; gap: 0.5rem; overflow-x: auto; padding-bottom: 0.5rem;">
+                      <!-- Forecast items will be populated by JS -->
+                    </div>
+                  </div>
                   <!-- Marine & Tide Summary -->
                   <div id="detail-marine-tide" class="d-none" style="margin-top: 0.75rem; padding-top: 0.75rem; border-top: 1px solid var(--glass-border);">
                     <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.75rem; margin-bottom: 0.75rem;">
