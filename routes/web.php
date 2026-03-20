@@ -40,3 +40,5 @@ Route::get('/api/locations/{id}', [LocationController::class, 'apiShow']);
 
 // Weather (OpenWeather) — server-side proxy so API key is not exposed
 Route::get('/api/weather', [WeatherController::class, 'current']);
+Route::get('/api/weather/comprehensive', [WeatherController::class, 'comprehensive']);
+Route::get('/api/weather/forecast', [WeatherController::class, 'forecast']);
