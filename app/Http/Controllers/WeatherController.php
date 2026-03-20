@@ -44,6 +44,21 @@ class WeatherController extends Controller
         }
 
         $data = $response->json();
+
+        $uvIndex = null;
+        $oneCallUrl = 'https://api.openweathermap.org/data/3.0/onecall';
+        $oneCall = Http::withoutVerifying()->get($oneCallUrl, [
+            'lat' => $lat,
+            'lon' => $lng,
+            'appid' => $apiKey,
+            'units' => 'metric',
+            'exclude' => 'minutely,hourly,daily,alerts',
+        ]);
+        if ($oneCall->successful()) {
+            $one = $oneCall->json();
+            $uvIndex = $one['current']['uvi'] ?? null;
+        }
+
         return response()->json([
             'temp' => $data['main']['temp'] ?? null,
             'feels_like' => $data['main']['feels_like'] ?? null,
@@ -52,6 +67,11 @@ class WeatherController extends Controller
             'icon' => $data['weather'][0]['icon'] ?? null,
             'wind_speed' => $data['wind']['speed'] ?? null,
             'name' => $data['name'] ?? null,
+            'pressure' => $data['main']['pressure'] ?? null,
+            'clouds' => $data['clouds']['all'] ?? null,
+            'visibility' => $data['visibility'] ?? null,
+            'uv_index' => $uvIndex,
+            'updated_at' => now()->toIso8601String(),
         ]);
     }
 }

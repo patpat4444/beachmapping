@@ -1,15 +1,42 @@
 document.addEventListener('DOMContentLoaded', function () {
-  // Default center roughly Philippines
-  var defaultCenter = [12.8797, 121.7740];
-  var defaultZoom = 6;
+  // Default center: Catmon, Cebu (Binongkalan area)
+  var defaultCenter = [10.725, 124.009];
+  var defaultZoom = 14;
+
+  var __lastWeather = null;
+  var __lastWeatherCoords = { lat: defaultCenter[0], lon: defaultCenter[1] };
+  var __weatherIntervalId = null;
+
+  var themeToggleBtn = document.getElementById('theme-toggle');
+  var themeIconEl = themeToggleBtn ? themeToggleBtn.querySelector('.theme-icon') : null;
+  var htmlEl = document.documentElement;
+  var savedTheme = localStorage.getItem('theme') || htmlEl.getAttribute('data-theme') || 'dark';
+  htmlEl.setAttribute('data-theme', savedTheme);
+  if (themeIconEl) themeIconEl.textContent = savedTheme === 'dark' ? '☀' : '☾';
 
   var map = L.map('map', { zoomControl: true }).setView(defaultCenter, defaultZoom);
 
   // Define tile layers
-  var regularMapLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  var lightMapLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     maxZoom: 19,
     attribution: '&copy; OpenStreetMap contributors'
-  }).addTo(map);
+  });
+
+  var darkMapLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}{r}.png', {
+    maxZoom: 19,
+    attribution: '&copy; OpenStreetMap contributors &copy; CARTO'
+  });
+
+  var activeBaseLayer = null;
+  function applyMapTheme(theme) {
+    var next = theme === 'dark' ? darkMapLayer : lightMapLayer;
+    if (activeBaseLayer === next) return;
+    if (activeBaseLayer) map.removeLayer(activeBaseLayer);
+    map.addLayer(next);
+    activeBaseLayer = next;
+  }
+
+  applyMapTheme(savedTheme);
 
   var satelliteMapLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
     maxZoom: 19,
@@ -18,10 +45,22 @@ document.addEventListener('DOMContentLoaded', function () {
 
   // Add layer control
   var baseLayers = {
-    'Map': regularMapLayer,
+    'Map (Dark)': darkMapLayer,
+    'Map (Light)': lightMapLayer,
     'Satellite': satelliteMapLayer
   };
   L.control.layers(baseLayers).addTo(map);
+
+  if (themeToggleBtn) {
+    themeToggleBtn.addEventListener('click', function(){
+      var current = htmlEl.getAttribute('data-theme') || 'dark';
+      var next = current === 'dark' ? 'light' : 'dark';
+      htmlEl.setAttribute('data-theme', next);
+      localStorage.setItem('theme', next);
+      if (themeIconEl) themeIconEl.textContent = next === 'dark' ? '☀' : '☾';
+      applyMapTheme(next);
+    });
+  }
 
   // User geolocation marker and accuracy circle; store last position for distance calc
   var userMarker = null;
@@ -78,6 +117,9 @@ document.addEventListener('DOMContentLoaded', function () {
       map.setView([lat, lng], 15);
 
       updateDistancesOnCards();
+
+      // Refresh the right-side weather widget using your current location
+      fetchWeatherForWidget(lat, lng);
     }, function(err){
       if (err.code === err.PERMISSION_DENIED) {
         alert('Location permission denied. Allow location access to use Locate me.');
@@ -91,23 +133,16 @@ document.addEventListener('DOMContentLoaded', function () {
 
   function updateDistancesOnCards() {
     if (!userLatLng) return;
-    var cards = document.querySelectorAll('#place-cards .card');
+    var cards = document.querySelectorAll('#place-cards .beach-card');
     var cardsData = window.__placeCardsData;
     if (!cardsData) return;
     cards.forEach(function(card, idx) {
       var p = cardsData[idx];
       if (!p || p.lat == null || p.lng == null) return;
       var dist = distanceMeters(userLatLng.lat, userLatLng.lng, p.lat, p.lng);
-      var distEl = card.querySelector('.distance-from-user');
-      if (distEl) distEl.textContent = formatDistance(dist);
-      else {
-        var titleWrap = card.querySelector('.card-title');
-        if (titleWrap) {
-          var span = document.createElement('span');
-          span.className = 'distance-from-user text-primary small ms-2';
-          span.textContent = formatDistance(dist);
-          titleWrap.appendChild(span);
-        }
+      var distEl = card.querySelector('.distance');
+      if (distEl) {
+        distEl.innerHTML = '<i class="fa-solid fa-location-dot"></i> ' + formatDistance(dist);
       }
     });
   }
@@ -159,6 +194,118 @@ document.addEventListener('DOMContentLoaded', function () {
       });
   }
 
+  function fetchWeatherForWidget(lat, lon) {
+    var widget = document.getElementById('weather-widget');
+    if (!widget) return;
+
+    var tempEl = document.getElementById('weather-temp');
+    var descEl = document.getElementById('weather-desc');
+    var emojiEl = document.getElementById('weather-emoji');
+    var wavesEl = document.getElementById('weather-waves');
+    var windEl = document.getElementById('weather-wind');
+    var humEl = document.getElementById('weather-humidity');
+    var uvEl = document.getElementById('weather-uv');
+    var loadingEl = document.getElementById('weather-loading');
+    var errorEl = document.getElementById('weather-error');
+
+    if (loadingEl) loadingEl.style.display = '';
+    if (errorEl) errorEl.style.display = 'none';
+
+    fetch('/api/weather?lat=' + encodeURIComponent(lat) + '&lon=' + encodeURIComponent(lon))
+      .then(function(res) { return res.json(); })
+      .then(function(data) {
+        if (loadingEl) loadingEl.style.display = 'none';
+        if (data && data.error) {
+          if (errorEl) errorEl.style.display = '';
+          return;
+        }
+
+        __lastWeather = data || null;
+        __lastWeatherCoords = { lat: lat, lon: lon };
+
+        if (tempEl) tempEl.textContent = (data && data.temp != null) ? (Math.round(data.temp) + '°C') : '—°C';
+        if (descEl) descEl.textContent = (data && data.description) ? (data.description.charAt(0).toUpperCase() + data.description.slice(1)) : '—';
+
+        // Waves not provided by OpenWeather; keep placeholder.
+        if (wavesEl) wavesEl.textContent = '—';
+        if (uvEl) uvEl.textContent = (data && data.uv_index != null) ? String(data.uv_index) : '—';
+
+        if (humEl) humEl.textContent = (data && data.humidity != null) ? (data.humidity + '%') : '—';
+        if (windEl) windEl.textContent = (data && data.wind_speed != null) ? (data.wind_speed + ' m/s') : '—';
+
+        if (emojiEl) {
+          emojiEl.textContent = '⛅';
+          if (data && data.description) {
+            var d = data.description.toLowerCase();
+            if (d.includes('rain')) emojiEl.textContent = '🌧️';
+            else if (d.includes('cloud')) emojiEl.textContent = '☁️';
+            else if (d.includes('clear')) emojiEl.textContent = '☀️';
+            else if (d.includes('storm') || d.includes('thunder')) emojiEl.textContent = '⛈️';
+          }
+        }
+
+        syncWeatherModalFromLast();
+      })
+      .catch(function() {
+        if (loadingEl) loadingEl.style.display = 'none';
+        if (errorEl) errorEl.style.display = '';
+      });
+  }
+
+  function syncWeatherModalFromLast() {
+    var modalEl = document.getElementById('weatherModal');
+    if (!modalEl) return;
+
+    var data = __lastWeather;
+    if (!data) return;
+
+    var tempEl = document.getElementById('weather-temp-more');
+    var descEl = document.getElementById('weather-desc-more');
+    var locEl = document.getElementById('weather-location-more');
+    var emojiEl = document.getElementById('weather-emoji-more');
+    var feelsEl = document.getElementById('weather-feels-more');
+    var pressureEl = document.getElementById('weather-pressure-more');
+    var humidityEl = document.getElementById('weather-humidity-more');
+    var windEl = document.getElementById('weather-wind-more');
+    var cloudsEl = document.getElementById('weather-clouds-more');
+    var visEl = document.getElementById('weather-visibility-more');
+    var uvEl = document.getElementById('weather-uv-more');
+    var updatedEl = document.getElementById('weather-updated-more');
+    var loadingEl = document.getElementById('weather-loading-more');
+    var errorEl = document.getElementById('weather-error-more');
+
+    if (loadingEl) loadingEl.style.display = 'none';
+    if (errorEl) errorEl.style.display = 'none';
+
+    if (tempEl) tempEl.textContent = (data.temp != null) ? (Math.round(data.temp) + '°C') : '—°C';
+    if (descEl) descEl.textContent = data.description ? (data.description.charAt(0).toUpperCase() + data.description.slice(1)) : '—';
+    if (locEl) locEl.textContent = data.name || '—';
+
+    if (feelsEl) feelsEl.textContent = (data.feels_like != null) ? (Math.round(data.feels_like) + '°C') : '—';
+    if (pressureEl) pressureEl.textContent = (data.pressure != null) ? (data.pressure + ' hPa') : '—';
+    if (humidityEl) humidityEl.textContent = (data.humidity != null) ? (data.humidity + '%') : '—';
+    if (windEl) windEl.textContent = (data.wind_speed != null) ? (data.wind_speed + ' m/s') : '—';
+    if (cloudsEl) cloudsEl.textContent = (data.clouds != null) ? (data.clouds + '%') : '—';
+    if (visEl) visEl.textContent = (data.visibility != null) ? ((data.visibility / 1000).toFixed(1) + ' km') : '—';
+    if (uvEl) uvEl.textContent = (data.uv_index != null) ? String(data.uv_index) : '—';
+    if (updatedEl) updatedEl.textContent = data.updated_at ? new Date(data.updated_at).toLocaleTimeString() : '—';
+
+    if (emojiEl) {
+      emojiEl.textContent = '⛅';
+      if (data.description) {
+        var d = data.description.toLowerCase();
+        if (d.includes('rain')) emojiEl.textContent = '🌧️';
+        else if (d.includes('cloud')) emojiEl.textContent = '☁️';
+        else if (d.includes('clear')) emojiEl.textContent = '☀️';
+        else if (d.includes('storm') || d.includes('thunder')) emojiEl.textContent = '⛈️';
+      }
+    }
+  }
+
+  function refreshWeatherNow() {
+    fetchWeatherForWidget(__lastWeatherCoords.lat, __lastWeatherCoords.lon);
+  }
+
 
   // Locate button: attach immediately so it works even with no locations
   var locateBtn = document.getElementById('locate-me');
@@ -173,6 +320,24 @@ document.addEventListener('DOMContentLoaded', function () {
     });
   }
 
+  // Load weather widget once on page load (default center; will update after Locate me)
+  fetchWeatherForWidget(defaultCenter[0], defaultCenter[1]);
+
+  // Refresh weather periodically for real-time updates (every 60 seconds)
+  __weatherIntervalId = window.setInterval(refreshWeatherNow, 60000);
+
+  // When the weather modal is opened, force a fresh fetch so it is real-time
+  var weatherModal = document.getElementById('weatherModal');
+  if (weatherModal) {
+    weatherModal.addEventListener('show.bs.modal', function(){
+      var loadingEl = document.getElementById('weather-loading-more');
+      var errorEl = document.getElementById('weather-error-more');
+      if (loadingEl) loadingEl.style.display = '';
+      if (errorEl) errorEl.style.display = 'none';
+      refreshWeatherNow();
+    });
+  }
+
   // Fetch saved locations from API and render markers
   fetch('/api/locations')
     .then(function(res){ return res.json(); })
@@ -182,8 +347,14 @@ document.addEventListener('DOMContentLoaded', function () {
 
       var markers = [];
       locations.forEach(function(p){
-        var marker = L.marker([p.lat, p.lng]).addTo(map);
-        var popupHtml = '<div style="display:flex;align-items:center">'
+        var marker = L.circleMarker([p.lat, p.lng], {
+          radius: 6,
+          color: 'rgba(126, 204, 224, 0.9)',
+          weight: 2,
+          fillColor: 'rgba(126, 204, 224, 0.55)',
+          fillOpacity: 1,
+        }).addTo(map);
+        var popupHtml = '<div style="display:flex;align-items:center"'
           + (p.image? '<img src="'+p.image+'" style="width:120px;height:80px;object-fit:cover;border-radius:4px;margin-right:8px">' : '')
           + '<div><div class="title">'+(p.name||'Untitled')+'</div><div class="small text-muted">'+(p.address||'')+'</div></div></div>';
         marker.bindPopup(popupHtml);
@@ -201,40 +372,81 @@ document.addEventListener('DOMContentLoaded', function () {
           cardsContainer.appendChild(empty);
         }
         locations.forEach(function(p, idx){
-          var imgHtml = p.image ? '<img src="'+p.image+'" class="card-img-top card-photo"/>' : '<div class="card-photo" style="background:linear-gradient(135deg,#e0e7ff 0%,#c7d2fe 100%)"></div>';
+          // Determine status based on some property or default to Open
+          var status = p.status || 'Open';
+          var statusClass = status.toLowerCase() === 'open' ? 'open' : 'closed';
+          
+          // Generate star rating HTML using Font Awesome
           var ratingStars = '';
           if (p.rating !== null && p.rating !== undefined) {
             var r = Math.max(0, Math.min(5, parseInt(p.rating)));
-            for (var i=0;i<r;i++) ratingStars += '★';
-            for (var i=r;i<5;i++) ratingStars += '☆';
+            for (var i = 0; i < 5; i++) {
+              if (i < r) {
+                ratingStars += '<i class="fa-solid fa-star"></i>';
+              } else {
+                ratingStars += '<i class="fa-regular fa-star"></i>';
+              }
+            }
+          } else {
+            ratingStars = '<i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i>';
+          }
+          
+          // Determine tags based on location properties
+          var tags = [];
+          if (p.type) tags.push(p.type);
+          if (p.facilities && p.facilities.toLowerCase().includes('snorkel')) tags.push('Snorkel');
+          if (p.fees && p.fees.toLowerCase().includes('public')) tags.push('Public');
+          if (p.fees && p.fees.toLowerCase().includes('resort')) tags.push('Resort');
+          if (tags.length === 0) tags.push('Beach');
+          
+          var tagsHtml = tags.map(function(tag) {
+            var tagClass = tag.toLowerCase();
+            return '<span class="tag ' + tagClass + '">' + tag + '</span>';
+          }).join('');
+          
+          // Calculate initial distance placeholder
+          var distanceText = '— km away';
+          if (userLatLng && p.lat != null && p.lng != null) {
+            var dist = distanceMeters(userLatLng.lat, userLatLng.lng, p.lat, p.lng);
+            distanceText = formatDistance(dist);
           }
 
           var card = document.createElement('div');
-          card.className = 'card mb-3';
-          card.style.cursor = 'pointer';
-          card.innerHTML = '<div>'+imgHtml+'</div>'
-            + '<div class="card-body">'
-            + '<h5 class="card-title">'+(p.name||'Untitled')+'</h5>'
-            + (ratingStars? '<div class="rating mb-2">'+ratingStars+' <span class="text-muted ms-2">'+(p.reviews||'')+'</span></div>' : '')
-            + '<p class="card-text text-muted small">'+(p.description||p.address||'')+'</p>'
-            + '<div class="d-flex justify-content-between align-items-center">'
-            + '<div>'
-            + '<button class="btn btn-sm btn-outline-primary btn-view-details">View details</button>'
-            + '</div>'
-            + '<div>'
-            + '<button class="btn btn-sm btn-outline-secondary btn-focus-map">Show on map</button>'
-            + '</div>'
-            + '</div>'
-            + '</div>';
+          card.className = 'beach-card';
+          card.dataset.index = idx;
+          card.innerHTML = 
+            '<div class="card-header">' +
+              '<h3 class="beach-name">' + (p.name || 'Untitled') + '</h3>' +
+              '<span class="status-badge ' + statusClass + '">' + status + '</span>' +
+            '</div>' +
+            '<div class="card-photo">' +
+              '<div class="photo-placeholder">' +
+                '<i class="fa-regular fa-image"></i>' +
+                '<span>Beach photo here</span>' +
+              '</div>' +
+            '</div>' +
+            '<div class="card-footer">' +
+              '<div class="beach-meta">' +
+                '<div class="rating">' + ratingStars + '</div>' +
+                '<div class="distance" data-lat="' + (p.lat || '') + '" data-lng="' + (p.lng || '') + '">' +
+                  '<i class="fa-solid fa-location-dot"></i> ' + distanceText +
+                '</div>' +
+              '</div>' +
+              '<div class="beach-tags">' + tagsHtml + '</div>' +
+              '<div class="card-actions">' +
+                '<button class="btn btn-view">View Details</button>' +
+                '<button class="btn btn-map">Show on Map</button>' +
+              '</div>' +
+            '</div>';
 
           (function(i){
-            card.querySelector('.btn-focus-map').addEventListener('click', function(e){
+            card.querySelector('.btn-map').addEventListener('click', function(e){
               e.stopPropagation();
               var m = markers[i];
               if (m) { map.setView(m.getLatLng(), 14); m.openPopup(); }
             });
 
-            card.querySelector('.btn-view-details').addEventListener('click', function(e){
+            card.querySelector('.btn-view').addEventListener('click', function(e){
               e.stopPropagation();
               var data = locations[i];
               var img = data.image || '';
@@ -250,8 +462,8 @@ document.addEventListener('DOMContentLoaded', function () {
               if (data.rating !== null && data.rating !== undefined) {
                 var r = Math.max(0, Math.min(5, parseInt(data.rating)));
                 var s = '';
-                for (var k=0;k<r;k++) s += '★';
-                for (var k=r;k<5;k++) s += '☆';
+                for (var k = 0; k < r; k++) s += '★';
+                for (var k = r; k < 5; k++) s += '☆';
                 ratingEl.textContent = s;
               }
               var distEl = document.getElementById('detail-distance');
@@ -304,7 +516,7 @@ document.addEventListener('DOMContentLoaded', function () {
       if (searchInput) {
         searchInput.addEventListener('input', function(e){
           var searchQuery = e.target.value.toLowerCase().trim();
-          var cards = document.querySelectorAll('#place-cards .card');
+          var cards = document.querySelectorAll('#place-cards .beach-card');
           var cardsData = window.__placeCardsData;
           
           if (!cardsData || !cardsData.length) return;
