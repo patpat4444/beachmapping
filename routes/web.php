@@ -24,7 +24,14 @@ Route::middleware('guest')->group(function () {
 });
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout')->middleware('auth');
 
-// Admin locations management
+Route::get('/admin/login', function () {
+    return view('admin.adminlog');
+})->name('admin.login');
+
+Route::post('/admin/verify', function () {
+    return redirect('/admin/locations');
+})->name('admin.verify');
+
 use App\Http\Controllers\LocationController;
 use App\Http\Controllers\WeatherController;
 
