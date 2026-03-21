@@ -205,8 +205,8 @@ body {
 }
 
 .hero-logo img {
-  width: 160px;
-  height: 160px;
+  width: 220px;
+  height: 220px;
   object-fit: contain;
   filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.3));
 }
@@ -288,9 +288,10 @@ body {
 .btn-cta-primary {
   background: var(--btn-primary-bg);
   color: #ffffff;
-  padding: 0.875rem 1.75rem;
+  padding: 0.42rem 1rem;
   border-radius: 25px;
   font-weight: 600;
+  font-size: 0.77rem;
   text-decoration: none;
 }
 
@@ -305,9 +306,10 @@ body {
 .btn-cta-secondary {
   background: transparent;
   color: #ffffff;
-  padding: 0.875rem 1.75rem;
+  padding: 0.42rem 1rem;
   border-radius: 25px;
   font-weight: 600;
+  font-size: 0.77rem;
   text-decoration: none;
   border: 1px solid rgba(255, 255, 255, 0.5);
   text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);

@@ -2,6 +2,9 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\SuperAdminController;
+use App\Models\User;
+use Illuminate\Support\Facades\Auth;
 
 Route::get('/', function () {
     return view('index');
@@ -29,18 +32,88 @@ Route::get('/admin/login', function () {
 })->name('admin.login');
 
 Route::post('/admin/verify', function () {
+    $pin = request('pin');
+    
+    if (!$pin || strlen($pin) !== 6) {
+        return redirect()->back()->with('error', 'Please enter a valid 6-digit PIN');
+    }
+    
+    $user = User::where('pin', $pin)
+                ->where('is_active', true)
+                ->whereIn('role', ['admin', 'beach_owner'])
+                ->first();
+    
+    if (!$user) {
+        return redirect()->back()->with('error', 'Invalid PIN or unauthorized access');
+    }
+    
+    Auth::login($user);
+    
     return redirect('/admin/locations');
 })->name('admin.verify');
+
+// Super Admin Login
+Route::middleware('superadmin.guest')->group(function () {
+    Route::get('/superadmin/login', function () {
+        return view('superadmin.login');
+    })->name('superadmin.login');
+
+    Route::post('/superadmin/verify', function () {
+        $pin = request('pin');
+        
+        if (!$pin) {
+            return redirect()->back()->with('error', 'Please enter your PIN');
+        }
+        
+        if (strlen($pin) !== 6) {
+            return redirect()->back()->with('error', 'PIN must be exactly 6 digits');
+        }
+        
+        $user = User::where('pin', $pin)
+                    ->where('role', 'super_admin')
+                    ->where('is_active', true)
+                    ->first();
+        
+        if (!$user) {
+            return redirect()->back()->with('error', 'Invalid Super Admin credentials');
+        }
+        
+        Auth::login($user, request()->has('remember'));
+        
+        return redirect('/superadmin/dashboard');
+    })->name('superadmin.verify');
+});
 
 use App\Http\Controllers\LocationController;
 use App\Http\Controllers\WeatherController;
 use App\Http\Controllers\TideController;
 
-Route::get('/admin/locations', [LocationController::class, 'index']);
-Route::post('/admin/locations', [LocationController::class, 'store']);
-Route::get('/admin/locations/{location}/edit', [LocationController::class, 'edit']);
-Route::put('/admin/locations/{location}', [LocationController::class, 'update']);
-Route::delete('/admin/locations/{location}', [LocationController::class, 'destroy']);
+Route::middleware(['auth', 'admin'])->prefix('admin')->group(function () {
+    Route::get('/locations', [LocationController::class, 'index']);
+    Route::post('/locations', [LocationController::class, 'store']);
+    Route::get('/locations/{location}/edit', [LocationController::class, 'edit']);
+    Route::put('/locations/{location}', [LocationController::class, 'update']);
+    Route::delete('/locations/{location}', [LocationController::class, 'destroy']);
+});
+
+// Super Admin Routes
+Route::middleware(['auth', 'superadmin'])->prefix('superadmin')->group(function () {
+    Route::get('/dashboard', [SuperAdminController::class, 'dashboard'])->name('superadmin.dashboard');
+    Route::get('/admins', [SuperAdminController::class, 'admins'])->name('superadmin.admins');
+    Route::get('/admins/{admin}', [SuperAdminController::class, 'adminDetails'])->name('superadmin.admins.details');
+    Route::post('/admins/{admin}/toggle', [SuperAdminController::class, 'toggleAdminStatus'])->name('superadmin.admins.toggle');
+    Route::delete('/admins/{admin}', [SuperAdminController::class, 'deleteAdmin'])->name('superadmin.admins.delete');
+    Route::post('/admins/{admin}/reset-pin', [SuperAdminController::class, 'resetAdminPin'])->name('superadmin.admins.reset-pin');
+    
+    Route::get('/users', [SuperAdminController::class, 'users'])->name('superadmin.users');
+    
+    Route::get('/applications', [SuperAdminController::class, 'applications'])->name('superadmin.applications');
+    Route::post('/applications/{application}/approve', [SuperAdminController::class, 'approveApplication'])->name('superadmin.applications.approve');
+    Route::post('/applications/{application}/reject', [SuperAdminController::class, 'rejectApplication'])->name('superadmin.applications.reject');
+    
+    Route::get('/activity-logs', [SuperAdminController::class, 'activityLogs'])->name('superadmin.activity-logs');
+    Route::get('/weather-data', [SuperAdminController::class, 'weatherData'])->name('superadmin.weather-data');
+});
 
 // API endpoint for frontend to fetch saved locations
 Route::get('/api/locations', [LocationController::class, 'apiIndex']);

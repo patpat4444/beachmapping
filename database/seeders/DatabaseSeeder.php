@@ -21,8 +21,5 @@ class DatabaseSeeder extends Seeder
             'name' => 'Test User',
             'email' => 'test@example.com',
         ]);
-
-        // Seed the 4 main beach resorts in Catmon
-        $this->call(BeachResortsSeeder::class);
     }
 }
