@@ -26,7 +26,7 @@ class SuperAdminSeeder extends Seeder
         $this->command->info('Super Admin created successfully!');
         $this->command->info('========================================');
         $this->command->info('PIN: 419154');
-        $this->command->info('Login: /admin/login');
+        $this->command->info('Login: /superadmin/login');
         $this->command->info('========================================');
     }
 }

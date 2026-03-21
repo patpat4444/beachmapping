@@ -87,11 +87,13 @@ Route::middleware('superadmin.guest')->group(function () {
 use App\Http\Controllers\LocationController;
 use App\Http\Controllers\WeatherController;
 
-Route::get('/admin/locations', [LocationController::class, 'index']);
-Route::post('/admin/locations', [LocationController::class, 'store']);
-Route::get('/admin/locations/{location}/edit', [LocationController::class, 'edit']);
-Route::put('/admin/locations/{location}', [LocationController::class, 'update']);
-Route::delete('/admin/locations/{location}', [LocationController::class, 'destroy']);
+Route::middleware(['auth', 'admin'])->prefix('admin')->group(function () {
+    Route::get('/locations', [LocationController::class, 'index']);
+    Route::post('/locations', [LocationController::class, 'store']);
+    Route::get('/locations/{location}/edit', [LocationController::class, 'edit']);
+    Route::put('/locations/{location}', [LocationController::class, 'update']);
+    Route::delete('/locations/{location}', [LocationController::class, 'destroy']);
+});
 
 // Super Admin Routes
 Route::middleware(['auth', 'superadmin'])->prefix('superadmin')->group(function () {

@@ -26,17 +26,23 @@
           <i class="fa-solid fa-users-gear"></i>
           <span>Beach Owners</span>
         </a>
+        <a href="/superadmin/users" class="nav-item">
+          <i class="fa-solid fa-users"></i>
+          <span>Manage User Accounts</span>
+        </a>
         
-        <div class="nav-section">Applications</div>
+        <div class="nav-section">System & Data</div>
         <a href="/superadmin/applications" class="nav-item">
           <i class="fa-solid fa-clipboard-list"></i>
           <span>Applications</span>
         </a>
-        
-        <div class="nav-section">System</div>
         <a href="/superadmin/activity-logs" class="nav-item">
           <i class="fa-solid fa-clock-rotate-left"></i>
-          <span>Activity Logs</span>
+          <span>Monitor System Activity</span>
+        </a>
+        <a href="/superadmin/weather-data" class="nav-item">
+          <i class="fa-solid fa-cloud-sun"></i>
+          <span>Update Weather & AI Data</span>
         </a>
       </nav>
       
@@ -48,9 +54,13 @@
             <div class="user-role">Super Admin</div>
           </div>
         </div>
-        <form method="POST" action="{{ route('logout') }}" class="logout-form">
+        <form method="POST" action="{{ route('logout') }}" class="logout-form" onsubmit="event.preventDefault(); document.getElementById('superadmin-logout').submit();">
           @csrf
           <button type="submit" class="logout-btn"><i class="fa-solid fa-right-from-bracket"></i> Logout</button>
+        </form>
+        <form id="superadmin-logout" method="POST" action="{{ route('logout') }}" style="display: none;">
+          @csrf
+          <input type="hidden" name="redirect" value="/superadmin/login">
         </form>
       </div>
     </aside>
