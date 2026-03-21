@@ -37,7 +37,7 @@
       <div class="hero-overlay"></div>
       <div class="hero-container">
         <div class="hero-logo">
-          <img src="/storage/locations/logo.png" alt="Dagat Ta bAI Logo">
+          <img src="/storage/locations/logooo.png" alt="Dagat Ta bAI Logo">
         </div>
         
         <h1 class="hero-title">Dagat Ta <span class="highlight">bAI</span></h1>
