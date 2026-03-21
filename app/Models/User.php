@@ -22,6 +22,9 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
+        'role',
+        'pin',
+        'is_active',
     ];
 
     /**
@@ -44,6 +47,39 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'is_active' => 'boolean',
         ];
+    }
+
+    public function isSuperAdmin(): bool
+    {
+        return $this->role === 'super_admin';
+    }
+
+    public function isAdmin(): bool
+    {
+        return $this->role === 'admin' || $this->role === 'super_admin';
+    }
+
+    public function isBeachOwner(): bool
+    {
+        return $this->role === 'beach_owner';
+    }
+
+    public function assignedLocations()
+    {
+        return $this->belongsToMany(Location::class, 'admin_location_assignments', 'admin_id', 'location_id')
+            ->withPivot(['assigned_by', 'assigned_at', 'expires_at', 'is_active'])
+            ->wherePivot('is_active', true);
+    }
+
+    public function featureRequests()
+    {
+        return $this->hasMany(FeatureRequest::class);
+    }
+
+    public function activities()
+    {
+        return $this->hasMany(ActivityLog::class);
     }
 }
