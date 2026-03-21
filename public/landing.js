@@ -923,7 +923,7 @@ document.addEventListener('DOMContentLoaded', function () {
               '</div>' +
               '<div class="beach-tags">' + tagsHtml + '</div>' +
               '<div class="card-actions">' +
-                '<button class="btn btn-view">View Details</button>' +
+                '<button class="btn btn-view" onclick="window.location.href=\'/beach/' + p.id + '\'">View Details</button>' +
                 '<button class="btn btn-map">Show on Map</button>' +
               '</div>' +
             '</div>';
@@ -933,55 +933,6 @@ document.addEventListener('DOMContentLoaded', function () {
               e.stopPropagation();
               var m = markers[i];
               if (m) { map.setView(m.getLatLng(), 14); m.openPopup(); }
-            });
-
-            card.querySelector('.btn-view').addEventListener('click', function(e){
-              e.stopPropagation();
-              var data = locations[i];
-              var img = data.image || '';
-              document.getElementById('detail-image').src = img;
-              document.getElementById('detail-title').textContent = data.name || '';
-              document.getElementById('detail-description').textContent = data.description || '';
-              setDetailRow('detail-location', data.address);
-              setDetailRow('detail-fees', data.fees);
-              setDetailRow('detail-facilities', data.facilities);
-              setDetailRow('detail-cottage', data.cottage);
-              var ratingEl = document.getElementById('detail-rating');
-              ratingEl.textContent = '';
-              if (data.rating !== null && data.rating !== undefined) {
-                var r = Math.max(0, Math.min(5, parseInt(data.rating)));
-                var s = '';
-                for (var k = 0; k < r; k++) s += '★';
-                for (var k = r; k < 5; k++) s += '☆';
-                ratingEl.textContent = s;
-              }
-              var distEl = document.getElementById('detail-distance');
-              if (distEl && userLatLng && data.lat != null && data.lng != null) {
-                var d = distanceMeters(userLatLng.lat, userLatLng.lng, data.lat, data.lng);
-                distEl.textContent = formatDistance(d);
-                distEl.parentElement.style.display = '';
-              } else if (distEl) {
-                distEl.parentElement.style.display = 'none';
-              }
-
-              // Handle Google Maps embed
-              var mapWrap = document.getElementById('detail-map-wrap');
-              var mapEmbed = document.getElementById('detail-map-embed');
-              if (data.maps_embed_url && data.maps_embed_url.trim() !== '') {
-                mapWrap.style.display = '';
-                mapEmbed.innerHTML = data.maps_embed_url;
-              } else {
-                mapWrap.style.display = 'none';
-                mapEmbed.innerHTML = '';
-              }
-
-              if (data.lat != null && data.lng != null) {
-                fetchWeatherForModal(data.lat, data.lng, data.address || data.name);
-              }
-
-              var modalEl = document.getElementById('detailModal');
-              var modal = new bootstrap.Modal(modalEl);
-              modal.show();
             });
           })(idx);
 
@@ -1095,6 +1046,8 @@ document.addEventListener('DOMContentLoaded', function () {
       var cardsContainer = document.getElementById('place-cards');
       if (cardsContainer) {
         cardsContainer.innerHTML = '';
+        var demoMarkers = [];
+        
         demoLocations.forEach(function(p, idx) {
           var card = document.createElement('div');
           card.className = 'beach-card';
@@ -1117,24 +1070,32 @@ document.addEventListener('DOMContentLoaded', function () {
               '</div>' +
               '<div class="beach-tags"><span class="tag">' + p.type + '</span></div>' +
               '<div class="card-actions">' +
-                '<button class="btn btn-view">View Details</button>' +
+                '<button class="btn btn-view" onclick="window.location.href=\'/beach/' + p.id + '\'">View Details</button>' +
                 '<button class="btn btn-map">Show on Map</button>' +
               '</div>' +
             '</div>';
+          
+          // Add marker to map
+          var marker = L.circleMarker([p.lat, p.lng], {
+            radius: 6,
+            color: 'rgba(126, 204, 224, 0.9)',
+            weight: 2,
+            fillColor: 'rgba(126, 204, 224, 0.55)',
+            fillOpacity: 1,
+          }).addTo(map).bindPopup('<div class="title">' + p.name + '</div>');
+          demoMarkers.push(marker);
+          
+          // Add click listeners
+          (function(i, mk){
+            card.querySelector('.btn-map').addEventListener('click', function(e){
+              e.stopPropagation();
+              if (mk) { map.setView(mk.getLatLng(), 14); mk.openPopup(); }
+            });
+          })(idx, marker);
+          
           cardsContainer.appendChild(card);
         });
       }
-      
-      // Add demo markers to map
-      demoLocations.forEach(function(p) {
-        L.circleMarker([p.lat, p.lng], {
-          radius: 6,
-          color: 'rgba(126, 204, 224, 0.9)',
-          weight: 2,
-          fillColor: 'rgba(126, 204, 224, 0.55)',
-          fillOpacity: 1,
-        }).addTo(map).bindPopup('<div class="title">' + p.name + '</div>');
-      });
       
       // Setup search for demo data
       var searchInput = document.getElementById('search-input');
@@ -1241,6 +1202,20 @@ document.addEventListener('DOMContentLoaded', function () {
       chatWidget.classList.add('expanded');
     }
     sendAiMessage(question);
+  };
+  
+  // Test function to verify modal works
+  window.testModal = function() {
+    console.log('Testing modal...');
+    var modalEl = document.getElementById('detailModal');
+    if (modalEl) {
+      document.getElementById('detail-title').textContent = 'Test Beach';
+      var modal = new bootstrap.Modal(modalEl);
+      modal.show();
+      console.log('Modal opened!');
+    } else {
+      console.error('Modal not found');
+    }
   };
 });
 

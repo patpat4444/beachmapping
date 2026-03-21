@@ -179,4 +179,68 @@ class LocationController extends Controller
             'lng' => (float) $location->longitude,
         ]);
     }
+
+    public function apiNearby($id)
+    {
+        $location = Location::find($id);
+        if (!$location) {
+            return response()->json(['error' => 'Location not found'], 404);
+        }
+
+        $currentLat = (float) $location->latitude;
+        $currentLng = (float) $location->longitude;
+
+        // Get all other locations
+        $nearby = Location::where('id', '!=', $id)->get()->map(function ($l) use ($currentLat, $currentLng) {
+            $distance = $this->calculateDistance($currentLat, $currentLng, (float) $l->latitude, (float) $l->longitude);
+            
+            $img = $l->image;
+            if ($img && str_starts_with($img, 'storage/')) {
+                $img = asset($img);
+            }
+
+            return [
+                'id' => $l->id,
+                'name' => $l->name,
+                'type' => $this->getLocationType($l),
+                'rating' => $l->rating ?? 4,
+                'distance' => round($distance, 1),
+                'distance_km' => $distance >= 1 ? round($distance, 1) . ' km' : round($distance * 1000) . ' m',
+                'image' => $img,
+            ];
+        })->sortBy('distance')->values()->take(5);
+
+        return response()->json($nearby);
+    }
+
+    private function calculateDistance($lat1, $lng1, $lat2, $lng2)
+    {
+        $earthRadius = 6371; // km
+
+        $dLat = deg2rad($lat2 - $lat1);
+        $dLng = deg2rad($lng2 - $lng1);
+
+        $a = sin($dLat / 2) * sin($dLat / 2) +
+            cos(deg2rad($lat1)) * cos(deg2rad($lat2)) *
+            sin($dLng / 2) * sin($dLng / 2);
+
+        $c = 2 * atan2(sqrt($a), sqrt(1 - $a));
+
+        return $earthRadius * $c;
+    }
+
+    private function getLocationType($location)
+    {
+        $facilities = strtolower($location->facilities ?? '');
+        
+        if (str_contains($facilities, 'resort')) {
+            return 'Resort';
+        } elseif (str_contains($facilities, 'snorkel') || str_contains($facilities, 'dive')) {
+            return 'Snorkel';
+        } elseif (str_contains($facilities, 'public')) {
+            return 'Public';
+        } else {
+            return 'Beach';
+        }
+    }
 }

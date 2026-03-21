@@ -34,6 +34,7 @@ Route::post('/admin/verify', function () {
 
 use App\Http\Controllers\LocationController;
 use App\Http\Controllers\WeatherController;
+use App\Http\Controllers\TideController;
 
 Route::get('/admin/locations', [LocationController::class, 'index']);
 Route::post('/admin/locations', [LocationController::class, 'store']);
@@ -44,8 +45,17 @@ Route::delete('/admin/locations/{location}', [LocationController::class, 'destro
 // API endpoint for frontend to fetch saved locations
 Route::get('/api/locations', [LocationController::class, 'apiIndex']);
 Route::get('/api/locations/{id}', [LocationController::class, 'apiShow']);
+Route::get('/api/locations/{id}/nearby', [LocationController::class, 'apiNearby']);
 
 // Weather (OpenWeather) — server-side proxy so API key is not exposed
 Route::get('/api/weather', [WeatherController::class, 'current']);
 Route::get('/api/weather/comprehensive', [WeatherController::class, 'comprehensive']);
 Route::get('/api/weather/forecast', [WeatherController::class, 'forecast']);
+
+// Tide and Wave Analytics API
+Route::get('/api/tides', [TideController::class, 'getTides']);
+
+// Beach detail page
+Route::get('/beach/{id}', function ($id) {
+    return view('beach-detail', ['id' => $id]);
+})->name('beach.detail');
