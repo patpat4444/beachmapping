@@ -13,13 +13,10 @@
     <!-- Header -->
     <header class="landing-header">
       <div class="header-container">
-        <a href="/" class="brand">Dagat Ta <span class="highlight">bAI</span></a>
+        <a href="/" class="brand">Dagat Ta <span class="highlight"><i>bAI</i></span></a>
         
         <nav class="main-nav">
-          <a href="#features">FEATURES</a>
-          <a href="#beaches">BEACHES</a>
-          <a href="#weather">WEATHER</a>
-          <a href="#ai-guide">AI GUIDE</a>
+          
         </nav>
         
         <div class="header-actions">
@@ -37,7 +34,7 @@
       <div class="hero-overlay"></div>
       <div class="hero-container">
         <div class="hero-logo">
-          <img src="/storage/locations/logooo.png" alt="Dagat Ta bAI Logo">
+          <img src="/storage/locations/logo.png" alt="Dagat Ta bAI Logo">
         </div>
         
         <h1 class="hero-title">Dagat Ta <span class="highlight">bAI</span></h1>
@@ -172,29 +169,53 @@
     <!-- CTA Section -->
     <section class="cta-section">
       <div class="cta-container">
-        <h2 class="cta-title">Ready to explore<br><span class="highlight">Binongkalan's</span> shores?</h2>
+        <h2 class="cta-title">Own a beach in <span class="highlight">Binongkalan</span>?</h2>
         <p class="cta-subtitle">
-          Create a free account and start discovering the best beach destinations in Catmon, Cebu today.
+          List your beach resort on Dagat Ta bAI and reach more tourists. Create an account to get started with your application.
         </p>
-        <a href="{{ route('register') }}" class="btn btn-cta-main">Get Started — It's Free</a>
+        <a href="{{ route('register') }}" class="btn btn-cta-main">Apply as Beach Owner — It's Free</a>
       </div>
     </section>
 
     <!-- Footer -->
-    <footer class="landing-footer">
+    <footer class="landing-footer" id="contact">
       <div class="footer-container">
-        <div class="footer-brand">
-          <span class="brand">Dagat Ta <span class="highlight">bAI</span></span>
+        <div class="footer-main">
+          <div class="footer-brand-section">
+            <span class="brand">Dagat Ta <span class="highlight"><i>bAI</i></span></span>
+            <p class="footer-desc">Your ultimate guide to beach destinations in Binongkalan, Catmon, Cebu.</p>
+          </div>
+          <div class="footer-links-group">
+            <h4>Quick Links</h4>
+            <a href="#features">Features</a>
+            <a href="#beaches">Beaches</a>
+            <a href="#weather">Weather</a>
+            <a href="#ai-guide">AI Guide</a>
+          </div>
+          <div class="footer-links-group">
+            <h4>Contact</h4>
+            <a href="mailto:info@dagattabai.com"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>info@dagattabai.com</a>
+            <a href="tel:+63123456789"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg>+63 123 456 789</a>
+            <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>Binongkalan, Catmon, Cebu</span>
+          </div>
+          <div class="footer-newsletter">
+            <h4>Stay Updated</h4>
+            <p>Subscribe to our newsletter for the latest beach updates.</p>
+            <div class="newsletter-form">
+              <input type="email" placeholder="Enter email address">
+              <button type="submit">Subscribe</button>
+            </div>
+          </div>
         </div>
         
-        <div class="footer-copy">
-          © 2025 Dagat Ta bAI · Binongkalan, Catmon, Cebu
-        </div>
-        
-        <div class="footer-links">
-          <a href="#">Privacy Policy</a>
-          <a href="#">Terms</a>
-          <a href="#">Contact</a>
+        <div class="footer-bottom">
+          <div class="footer-legal">
+            <a href="#">Privacy Policy</a>
+            <a href="#">Terms & Conditions</a>
+          </div>
+          <div class="footer-copy">
+            © 2026 Dagat Ta bAI · All rights reserved
+          </div>
         </div>
       </div>
     </footer>

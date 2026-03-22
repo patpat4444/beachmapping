@@ -717,7 +717,7 @@ body {
 }
 
 .footer-bottom {
-  background: var(--bg-secondary);
+  background: #ffffff;
   margin: 0 -2rem;
   padding: 0.875rem 2rem;
   display: flex;
