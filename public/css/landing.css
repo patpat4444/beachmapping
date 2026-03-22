@@ -70,20 +70,20 @@ body {
   z-index: 1000;
   background: var(--bg-primary);
   border-bottom: 1px solid var(--border-color);
-  padding: 1rem 0;
+  padding: 0.5rem 0;
 }
 
 .header-container {
   max-width: 1200px;
   margin: 0 auto;
-  padding: 0 2rem;
+  padding: 0 1.5rem;
   display: flex;
   align-items: center;
   justify-content: space-between;
 }
 
 .brand {
-  font-size: 1.5rem;
+  font-size: 1.25rem;
   font-weight: 600;
   color: var(--text-primary);
   text-decoration: none;
@@ -113,6 +113,11 @@ body {
   display: flex;
   align-items: center;
   gap: 1rem;
+}
+
+.header-actions .btn {
+  padding: 0.35rem 0.75rem;
+  font-size: 0.875rem;
 }
 
 .btn {
@@ -744,6 +749,22 @@ body {
 
 .footer-legal a:hover {
   color: var(--accent-color);
+}
+
+/* Footer Dark Mode */
+[data-theme="dark"] .landing-footer {
+  background: var(--bg-card);
+  border-top: 1px solid var(--border-color);
+}
+
+[data-theme="dark"] .footer-bottom {
+  background: var(--bg-card);
+  border-top: 1px solid var(--border-color);
+}
+
+[data-theme="dark"] .newsletter-form input {
+  background: var(--bg-secondary);
+  border-color: var(--border-color);
 }
 
 /* Responsive */
