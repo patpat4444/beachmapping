@@ -129,66 +129,117 @@
           Browse all mapped beach resorts in Barangay Binongkalan, Catmon, Cebu.
         </p>
         
-        <div class="beaches-grid">
-          <div class="beach-card">
-            <div class="beach-image">
-              <span class="placeholder">🖼️ Beach photo</span>
+        <div class="beaches-slider">
+          <div class="slider-track" id="sliderTrack">
+            <div class="slide">
+              <img src="/storage/locations/ranola.png" alt="Rañola Beach Resort" loading="lazy">
+              <div class="slide-overlay">
+                <h4>Rañola Beach Resort</h4>
+                <span>0.8 km • Open</span>
+              </div>
             </div>
-            <div class="beach-info">
-              <h4>Sta. Rosa Beach</h4>
-              <div class="beach-meta">
-                <span>0.8 km</span>
-                <span class="status open">● Open</span>
+            <div class="slide">
+              <img src="/storage/locations/lite.png" alt="Lite Bay Resort" loading="lazy">
+              <div class="slide-overlay">
+                <h4>Lite Bay Resort</h4>
+                <span>1.4 km • Open</span>
+              </div>
+            </div>
+            <div class="slide">
+              <img src="/storage/locations/majestique.png" alt="Majestique View Beach Resort" loading="lazy">
+              <div class="slide-overlay">
+                <h4>Majestique View Beach Resort</h4>
+                <span>2.1 km • Open</span>
+              </div>
+            </div>
+            <div class="slide">
+              <img src="/storage/locations/turtle.png" alt="Turtle Point Beach Resort" loading="lazy">
+              <div class="slide-overlay">
+                <h4>Turtle Point Beach Resort</h4>
+                <span>3.7 km • Open</span>
+              </div>
+            </div>
+            <div class="slide">
+              <img src="/storage/locations/hinagdan.png" alt="Hinagdan Beach Resort" loading="lazy">
+              <div class="slide-overlay">
+                <h4>Hinagdan Beach Resort</h4>
+                <span>4.5 km • Open</span>
               </div>
             </div>
           </div>
-          
-          <div class="beach-card">
-            <div class="beach-image">
-              <span class="placeholder">🖼️ Beach photo</span>
-            </div>
-            <div class="beach-info">
-              <h4>Catmon White Sand</h4>
-              <div class="beach-meta">
-                <span>1.4 km</span>
-                <span class="status open">● Open</span>
-              </div>
-            </div>
-          </div>
-          
-          <div class="beach-card">
-            <div class="beach-image">
-              <span class="placeholder">🖼️ Beach photo</span>
-            </div>
-            <div class="beach-info">
-              <h4>Binongkalan Cove</h4>
-              <div class="beach-meta">
-                <span>2.1 km</span>
-                <span class="status open">● Open</span>
-              </div>
-            </div>
-          </div>
-          
-          <div class="beach-card">
-            <div class="beach-image">
-              <span class="placeholder">🖼️ Beach photo</span>
-            </div>
-            <div class="beach-info">
-              <h4>Coral Bay Resort</h4>
-              <div class="beach-meta">
-                <span>3.7 km</span>
-                <span class="status open">● Open</span>
-              </div>
-            </div>
-          </div>
+          <div class="slider-dots" id="sliderDots"></div>
         </div>
+        
+        <script>
+          (function() {
+            const track = document.getElementById('sliderTrack');
+            const slides = track.querySelectorAll('.slide');
+            const dotsContainer = document.getElementById('sliderDots');
+            let currentIndex = 0;
+            let autoSlideInterval;
+            
+            for (let i = 0; i < slides.length; i++) {
+              const dot = document.createElement('button');
+              dot.className = 'slider-dot' + (i === 0 ? ' active' : '');
+              dot.setAttribute('aria-label', 'Go to slide ' + (i + 1));
+              dot.addEventListener('click', () => goToSlide(i));
+              dotsContainer.appendChild(dot);
+            }
+            
+            function updateDots() {
+              dotsContainer.querySelectorAll('.slider-dot').forEach((dot, i) => {
+                dot.classList.toggle('active', i === currentIndex);
+              });
+            }
+            
+            function goToSlide(index) {
+              currentIndex = index;
+              track.style.transform = 'translateX(-' + (currentIndex * 100) + '%)';
+              updateDots();
+            }
+            
+            function nextSlide() {
+              currentIndex = (currentIndex + 1) % slides.length;
+              goToSlide(currentIndex);
+            }
+            
+            function startAutoSlide() {
+              autoSlideInterval = setInterval(nextSlide, 4000);
+            }
+            
+            function stopAutoSlide() {
+              clearInterval(autoSlideInterval);
+            }
+            
+            track.parentElement.addEventListener('mouseenter', stopAutoSlide);
+            track.parentElement.addEventListener('mouseleave', startAutoSlide);
+            
+            let touchStartX = 0;
+            track.addEventListener('touchstart', (e) => {
+              touchStartX = e.changedTouches[0].screenX;
+              stopAutoSlide();
+            }, {passive: true});
+            
+            track.addEventListener('touchend', (e) => {
+              const touchEndX = e.changedTouches[0].screenX;
+              const diff = touchStartX - touchEndX;
+              if (Math.abs(diff) > 50) {
+                if (diff > 0) goToSlide((currentIndex + 1) % slides.length);
+                else goToSlide((currentIndex - 1 + slides.length) % slides.length);
+              }
+              startAutoSlide();
+            }, {passive: true});
+            
+            startAutoSlide();
+          })();
+        </script>
       </div>
     </section>
 
     <!-- CTA Section -->
     <section class="cta-section">
       <div class="cta-container">
-        <h2 class="cta-title">Own a beach in <span class="highlight">Binongkalan</span>?</h2>
+        <h2 class="cta-title">Own a beach in <span class="highlight">Binongkalan?</span></h2>
         <p class="cta-subtitle">
           List your beach resort on Dagat Ta <i>bAI</i> and reach more tourists. Create an account to get started with your application.
         </p>
