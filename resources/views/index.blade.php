@@ -28,32 +28,38 @@
 
     <!-- Hero Section -->
     <section class="hero-section">
-      <video class="hero-video" autoplay muted loop playsinline>
-        <source src="/storage/locations/bg.mp4" type="video/mp4">
-      </video>
-      <div class="hero-overlay"></div>
       <div class="hero-container">
         <div class="hero-logo">
           <img src="/storage/locations/logo.png" alt="Dagat Ta bAI Logo">
         </div>
         
-        <h1 class="hero-title">Dagat Ta <span class="highlight">bAI</span></h1>
-        
-        <p class="hero-subtitle">
-        </p>
+        <h1 class="hero-title">Discover <span class="highlight">beach escapes</span><br>near Binongkalan</h1>
         
         <div class="hero-cta">
-          <a href="{{ route('explore') }}" class="btn btn-cta-primary">Explore the Map</a>
-          <a href="#features" class="btn btn-cta-secondary">Learn More</a>
+          <a href="{{ route('explore') }}" class="btn btn-cta-outline">Explore the map</a>
+          <a href="#features" class="btn btn-cta-outline">Learn more</a>
         </div>
+
+        <a class="scroll-indicator" href="#features" aria-label="Scroll to explore">
+          <span>SCROLL TO EXPLORE</span>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" focusable="false">
+            <path d="M12 5v14M19 12l-7 7-7-7"/>
+          </svg>
+        </a>
       </div>
-      
-      <a class="scroll-indicator" href="#features" aria-label="Scroll to explore">
-        <span>SCROLL TO EXPLORE</span>
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" focusable="false">
-          <path d="M12 5v14M19 12l-7 7-7-7"/>
+
+      <!-- Wave Animation -->
+      <div class="wave-container">
+        <svg class="wave wave-1" viewBox="0 0 1440 120" preserveAspectRatio="none">
+          <path d="M0,60 C240,120 480,0 720,60 C960,120 1200,0 1440,60 L1440,120 L0,120 Z"></path>
         </svg>
-      </a>
+        <svg class="wave wave-2" viewBox="0 0 1440 120" preserveAspectRatio="none">
+          <path d="M0,80 C360,20 720,100 1080,40 C1260,70 1380,70 1440,40 L1440,120 L0,120 Z"></path>
+        </svg>
+        <svg class="wave wave-3" viewBox="0 0 1440 120" preserveAspectRatio="none">
+          <path d="M0,40 C180,90 360,20 540,60 C720,100 900,40 1080,70 C1260,100 1350,50 1440,80 L1440,120 L0,120 Z"></path>
+        </svg>
+      </div>
     </section>
 
     <!-- Floating Theme Toggle -->
@@ -72,28 +78,41 @@
       <div class="section-container">
         <span class="section-label">WHAT WE OFFER</span>
         <h2 class="section-title">Everything you need for your <span class="highlight">beach trip</span></h2>
-        <p class="section-subtitle">
-          Dagat Ta bAI combines three powerful technologies into one easy-to-use platform for tourists and visitors in Binongkalan, Catmon, Cebu.
-        </p>
         
         <div class="features-grid">
           <div class="feature-card">
-            <div class="card-accent blue"></div>
-            <div class="feature-icon">🗺️</div>
+            <div class="card-accent"></div>
+            <div class="feature-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <polygon points="3 11 22 2 13 21 11 13 3 11"></polygon>
+              </svg>
+            </div>
             <h3>Geospatial Mapping</h3>
-            <p>Explore an interactive digital map showing all 8 commercial beach destinations in Barangay Binongkalan with precise locations, routes, and facilities.</p>
+            <p>Explore an interactive digital map showing all four commercial beach destinations in Barangay Binongkalan with precise locations, virtual tour and facilities.</p>
           </div>
           
           <div class="feature-card">
-            <div class="card-accent green"></div>
-            <div class="feature-icon">🤖</div>
+            <div class="card-accent"></div>
+            <div class="feature-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="11" width="18" height="10" rx="2"></rect>
+                <circle cx="12" cy="5" r="2"></circle>
+                <path d="M12 7v4"></path>
+                <line x1="8" y1="16" x2="8" y2="16"></line>
+                <line x1="16" y1="16" x2="16" y2="16"></line>
+              </svg>
+            </div>
             <h3>AI Inquiry Assistant</h3>
-            <p>Ask anything about beach conditions, facilities, directions, and travel tips. Our AI chatbot gives instant, accurate answers anytime.</p>
+            <p>Ask anything about beach conditions, facilities, and travel tips. Our AI chatbot gives instant, accurate answers anytime.</p>
           </div>
           
           <div class="feature-card">
-            <div class="card-accent yellow"></div>
-            <div class="feature-icon">☀️</div>
+            <div class="card-accent"></div>
+            <div class="feature-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"></path>
+              </svg>
+            </div>
             <h3>Weather Analytics</h3>
             <p>Access real-time weather data including temperature, wind speed, wave height, and UV index to plan the perfect beach day.</p>
           </div>
@@ -107,7 +126,7 @@
         <span class="section-label">DISCOVER</span>
         <h2 class="section-title">Commercial <span class="highlight">Beach Destinations</span></h2>
         <p class="section-subtitle">
-          Browse all mapped beach resorts in Barangay Binongkalan, Catmon, Cebu — with real-time status and weather info.
+          Browse all mapped beach resorts in Barangay Binongkalan, Catmon, Cebu.
         </p>
         
         <div class="beaches-grid">
@@ -171,7 +190,7 @@
       <div class="cta-container">
         <h2 class="cta-title">Own a beach in <span class="highlight">Binongkalan</span>?</h2>
         <p class="cta-subtitle">
-          List your beach resort on Dagat Ta bAI and reach more tourists. Create an account to get started with your application.
+          List your beach resort on Dagat Ta <i>bAI</i> and reach more tourists. Create an account to get started with your application.
         </p>
         <a href="{{ route('register') }}" class="btn btn-cta-main">Apply as Beach Owner — It's Free</a>
       </div>
@@ -194,8 +213,8 @@
           </div>
           <div class="footer-links-group">
             <h4>Contact</h4>
-            <a href="mailto:info@dagattabai.com"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>info@dagattabai.com</a>
-            <a href="tel:+63123456789"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg>+63 123 456 789</a>
+            <a href="mailto:DagatTaBai@gmail.com"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>info@dagattabai.com</a>
+            <a href="tel:+63 994 997 9967"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg>+63 123 456 789</a>
             <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>Binongkalan, Catmon, Cebu</span>
           </div>
           <div class="footer-newsletter">
