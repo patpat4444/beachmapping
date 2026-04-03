@@ -15,7 +15,7 @@ Route::get('/landing', function () {
 });
 
 Route::get('/explore', function () {
-    return view('landing');
+    return view('map');
 })->name('explore');
 
 // Auth: guest-only routes

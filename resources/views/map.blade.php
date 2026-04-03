@@ -3,35 +3,387 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Dagat Ta bAI — Explore beaches & places</title>
+    <title>Explore beaches & places</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" />
-    <link rel="stylesheet" href="/landing.css">
+    <style>
+      /* Collapsible Sidebar Styles */
+      .landing-sidebar {
+        position: fixed;
+        left: 0;
+        top: 0;
+        height: 100vh;
+        width: 320px;
+        background: white;
+        z-index: 1000;
+        transform: translateX(0);
+        transition: transform 0.3s ease;
+        box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+        overflow-y: auto;
+        padding: 20px;
+      }
+      .landing-sidebar.collapsed {
+        transform: translateX(-100%);
+      }
+      /* AI Chat Widget Styles - Bottom Right */
+      .ai-chat-widget {
+        position: fixed;
+        bottom: 30px;
+        right: 30px;
+        z-index: 1001;
+        font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      }
+      .ai-chat-circle {
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        background: #ffffff;
+        border: 2px solid #1a2a3a;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+        position: relative;
+      }
+      .ai-chat-circle:hover {
+        transform: scale(1.1);
+        box-shadow: 0 6px 30px rgba(0, 0, 0, 0.4);
+      }
+      .ai-chat-circle i {
+        color: #1a2a3a;
+        font-size: 24px;
+      }
+      .ai-chat-pulse {
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        border-radius: 50%;
+        background: rgba(26, 42, 58, 0.2);
+        animation: pulse 2s infinite;
+        z-index: -1;
+      }
+      @keyframes pulse {
+        0% { transform: scale(1); opacity: 1; }
+        100% { transform: scale(1.5); opacity: 0; }
+      }
+      .ai-chat-panel {
+        position: absolute;
+        bottom: 80px;
+        right: 0;
+        width: 350px;
+        height: 500px;
+        background: rgba(255, 255, 255, 0.98);
+        backdrop-filter: blur(20px);
+        border-radius: 20px;
+        box-shadow: 0 8px 32px rgba(0,0,0,0.15);
+        display: none;
+        flex-direction: column;
+        overflow: hidden;
+        border: 1px solid rgba(255,255,255,0.3);
+      }
+      .ai-chat-panel.active {
+        display: flex;
+      }
+      .sidebar-toggle {
+        position: fixed;
+        left: 20px;
+        top: 20px;
+        z-index: 9999;
+        width: 45px;
+        height: 45px;
+        background: #ffffff;
+        border: none;
+        border-radius: 10px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 20px;
+        color: #1a2a3a;
+        transition: all 0.3s ease;
+      }
+      .sidebar-toggle:hover {
+        background: #f1f5f9;
+        transform: scale(1.05);
+      }
+      .sidebar-toggle.sidebar-open {
+        left: 400px;
+      }
+      
+      /* Sidebar Close Button */
+      .sidebar-close-btn {
+        position: absolute;
+        right: 15px;
+        top: 15px;
+        width: 35px;
+        height: 35px;
+        background: #f1f5f9;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 16px;
+        color: #64748b;
+        transition: all 0.2s ease;
+      }
+      .sidebar-close-btn:hover {
+        background: #e2e8f0;
+        color: #333;
+      }
+      .landing-map-wrap {
+        margin-left: 0;
+        transition: margin-left 0.3s ease;
+        height: 100vh;
+        width: 100vw;
+      }
+      .landing-map-wrap.sidebar-visible {
+        margin-left: 320px;
+        width: calc(100vw - 320px);
+      }
+      
+      /* Header with Search */
+      .map-header {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        z-index: 999;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+      .header-search-box {
+        background: white;
+        border-radius: 25px;
+        padding: 8px 16px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+        width: 280px;
+      }
+      .header-search-box input {
+        border: none;
+        outline: none;
+        flex: 1;
+        font-size: 14px;
+      }
+      .header-search-box i {
+        color: #666;
+      }
+      .user-menu-btn {
+        width: 45px;
+        height: 45px;
+        background: white;
+        border: none;
+        border-radius: 50%;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .sidebar-header {
+        margin-bottom: 20px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        height: 35px;
+      }
+      .sidebar-title {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: #1a2a3a;
+        margin: 0;
+        line-height: 1;
+      }
+      .sidebar-title em {
+        color: #2a9db8;
+        font-style: italic;
+      }
+      
+      /* Filters */
+      .landing-filters {
+        display: flex;
+        gap: 12px;
+        margin-bottom: 16px;
+      }
+      .filter-group {
+        position: relative;
+        flex: 1;
+      }
+      .filter-group .form-select {
+        width: 100%;
+        padding: 10px 35px 10px 12px;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        background: white;
+        font-size: 14px;
+        cursor: pointer;
+        appearance: none;
+      }
+      .filter-arrow {
+        position: absolute;
+        right: 12px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #64748b;
+        font-size: 12px;
+        pointer-events: none;
+      }
+      
+      /* Buttons */
+      .btn-locate {
+        width: 100%;
+        padding: 12px;
+        background: #2a9db8;
+        color: white;
+        border: none;
+        border-radius: 8px;
+        font-weight: 600;
+        margin-bottom: 16px;
+        cursor: pointer;
+      }
+      .results-count {
+        color: #64748b;
+        font-size: 14px;
+        margin-bottom: 16px;
+      }
+      
+      /* Beach Cards */
+      .landing-cards-wrap {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+      }
+      .beach-card {
+        background: white;
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        padding: 16px;
+      }
+      .card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 12px;
+      }
+      .beach-name {
+        font-size: 1.1rem;
+        font-weight: 700;
+        color: #1a2a3a;
+        margin: 0;
+      }
+      .status-badge {
+        background: #dcfce7;
+        color: #16a34a;
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: 600;
+      }
+      .card-photo {
+        background: #f1f5f9;
+        border-radius: 8px;
+        height: 120px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 12px;
+      }
+      .photo-placeholder {
+        text-align: center;
+        color: #94a3b8;
+      }
+      .photo-placeholder i {
+        font-size: 24px;
+        margin-bottom: 4px;
+      }
+      .card-footer {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+      .beach-meta {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+      .rating {
+        color: #fbbf24;
+      }
+      .distance {
+        color: #64748b;
+        font-size: 14px;
+      }
+      .beach-tags {
+        display: flex;
+        gap: 8px;
+      }
+      .tag {
+        background: #f1f5f9;
+        color: #64748b;
+        padding: 4px 12px;
+        border-radius: 6px;
+        font-size: 12px;
+      }
+      .card-actions {
+        display: flex;
+        gap: 8px;
+        margin-top: 8px;
+      }
+      .btn-view {
+        flex: 1;
+        padding: 6px 12px;
+        background: #2a9db8;
+        color: white;
+        border: none;
+        border-radius: 6px;
+        font-weight: 600;
+        font-size: 13px;
+        cursor: pointer;
+      }
+      .btn-map {
+        flex: 1;
+        padding: 6px 12px;
+        background: #f1f5f9;
+        color: #64748b;
+        border: none;
+        border-radius: 6px;
+        font-weight: 600;
+        font-size: 13px;
+        cursor: pointer;
+      }
+    </style>
   </head>
   <body>
-    <header class="landing-appbar d-flex align-items-center">
-      <a href="/landing" class="brand">Dagat Ta <em>bAI</em></a>
-      <div class="ms-auto d-flex align-items-center gap-2 flex-wrap">
-        <div class="search-box">
-          <i class="fa-solid fa-search search-icon"></i>
-          <input type="text" id="beach-search" placeholder="Search beaches..." aria-label="Search beaches" />
-        </div>
-        @auth
-          <span class="user-welcome me-2">Welcome, {{ auth()->user()->name }}</span>
-          <form method="POST" action="{{ route('logout') }}" class="d-inline">
-            @csrf
-            <button type="submit" class="btn btn-appbar btn-outline-appbar">Log out</button>
-          </form>
-        @else
-          <a href="{{ route('login', ['redirect' => url()->current()]) }}" class="btn btn-appbar btn-outline-appbar">Log in</a>
-          <a href="{{ route('register') }}" class="btn btn-appbar btn-solid">Sign up</a>
-        @endauth
+    <!-- Sidebar Toggle Button -->
+    <button class="sidebar-toggle" id="sidebar-toggle" aria-label="Toggle sidebar">
+      <i class="fa-solid fa-bars"></i>
+    </button>
+
+    <!-- Header with Search -->
+    <div class="map-header">
+      <div class="header-search-box">
+        <i class="fa-solid fa-search"></i>
+        <input type="text" id="beach-search" placeholder="Search beaches..." aria-label="Search beaches" />
       </div>
-    </header>
+      <button class="user-menu-btn" onclick="toggleUserMenu()">
+        <i class="fa-solid fa-user"></i>
+      </button>
+    </div>
 
     <main class="landing-main">
-      <div class="landing-sidebar">
+      <div class="landing-sidebar collapsed" id="landing-sidebar">
+        <!-- Close button inside sidebar -->
+        <button class="sidebar-close-btn" id="sidebar-close-btn" aria-label="Close sidebar">
+          <i class="fa-solid fa-chevron-left"></i>
+        </button>
         <div class="sidebar-header">
           <h2 class="sidebar-title">Beach <em>Destinations</em></h2>
         </div>
@@ -59,7 +411,7 @@
         <button type="button" id="locate-me" class="btn btn-locate">
           <i class="fa-solid fa-location-crosshairs"></i> Locate me
         </button>
-        <div class="results-count">Showing 5 beaches in Binongkalan</div>
+        <div class="results-count">Showing 5 beach destinations</div>
         <div id="place-cards" class="landing-cards-wrap">
           <!-- Beach cards will be populated by JS -->
         </div>
@@ -492,18 +844,40 @@
       window.loginUrl = @json(route('login', ['redirect' => url()->current()]));
       
       // Test modal function for debugging
-      window.testModal = function() {
-        console.log('Opening test modal...');
-        var modalEl = document.getElementById('detailModal');
-        if (modalEl) {
-          document.getElementById('detail-title').textContent = 'Test Beach';
-          var modal = new bootstrap.Modal(modalEl);
-          modal.show();
-          console.log('Modal opened successfully!');
-        } else {
-          console.error('Modal element not found');
-        }
+      window.sendAiQuestion = function(question) {
+        aiInput.value = question;
+        console.log('AI Question:', question);
       };
+      
+      // Sidebar Toggle Functionality
+      var sidebarToggle = document.getElementById('sidebar-toggle');
+      var sidebarCloseBtn = document.getElementById('sidebar-close-btn');
+      var sidebar = document.getElementById('landing-sidebar');
+      var mapWrap = document.getElementById('map-section');
+      var sidebarOpen = false;
+      
+      function toggleSidebar() {
+        sidebarOpen = !sidebarOpen;
+        if (sidebarOpen) {
+          sidebar.classList.remove('collapsed');
+          mapWrap.classList.add('sidebar-visible');
+          sidebarToggle.classList.add('sidebar-open');
+          sidebarToggle.innerHTML = '<i class="fa-solid fa-chevron-left"></i>';
+        } else {
+          sidebar.classList.add('collapsed');
+          mapWrap.classList.remove('sidebar-visible');
+          sidebarToggle.classList.remove('sidebar-open');
+          sidebarToggle.innerHTML = '<i class="fa-solid fa-bars"></i>';
+        }
+      }
+      
+      if (sidebarToggle) {
+        sidebarToggle.addEventListener('click', toggleSidebar);
+      }
+      
+      if (sidebarCloseBtn) {
+        sidebarCloseBtn.addEventListener('click', toggleSidebar);
+      }
       
       // Auto-test modal after 3 seconds (for debugging)
       setTimeout(function() {

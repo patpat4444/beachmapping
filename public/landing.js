@@ -1,62 +1,41 @@
 document.addEventListener('DOMContentLoaded', function () {
-  // Default center: Cebu area (broader view)
-  var defaultCenter = [10.5, 123.9];
-  var defaultZoom = 11;
+  // Default center: Binongkalan area (focused on the 5 beach resorts)
+  var defaultCenter = [10.634, 124.028];
+  var defaultZoom = 16;
 
   var __lastWeather = null;
   var __lastWeatherCoords = { lat: defaultCenter[0], lon: defaultCenter[1] };
   var __weatherIntervalId = null;
 
-  // Get current theme and set up map theme listener
-  var htmlEl = document.documentElement;
-  var savedTheme = htmlEl.getAttribute('data-theme') || 'dark';
+  // Remove theme-related code - always use light mode
 
   // No bounds restriction - allow free navigation
   var map = L.map('map', { 
-    zoomControl: true,
+    zoomControl: false,
     minZoom: 9,
     maxZoom: 19
   }).setView(defaultCenter, defaultZoom);
+  
+  // Add zoom control to bottom left (above the layer control)
+  L.control.zoom({ position: 'bottomleft' }).addTo(map);
 
-  // Define tile layers
+  // Define tile layers - only light mode
   var lightMapLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     maxZoom: 19,
     attribution: '&copy; OpenStreetMap contributors'
-  });
-
-  var darkMapLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}{r}.png', {
-    maxZoom: 19,
-    attribution: '&copy; OpenStreetMap contributors &copy; CARTO'
-  });
-
-  var activeBaseLayer = null;
-  function applyMapTheme(theme) {
-    var next = theme === 'dark' ? darkMapLayer : lightMapLayer;
-    if (activeBaseLayer === next) return;
-    if (activeBaseLayer) map.removeLayer(activeBaseLayer);
-    map.addLayer(next);
-    activeBaseLayer = next;
-  }
-
-  applyMapTheme(savedTheme);
+  }).addTo(map);
 
   var satelliteMapLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
     maxZoom: 19,
     attribution: '&copy; Esri, DigitalGlobe, Earthstar Geographics'
   });
 
-  // Add layer control
+  // Add layer control - only Map and Satellite options
   var baseLayers = {
-    'Map (Dark)': darkMapLayer,
-    'Map (Light)': lightMapLayer,
+    'Map': lightMapLayer,
     'Satellite': satelliteMapLayer
   };
-  L.control.layers(baseLayers).addTo(map);
-
-  // Listen for theme changes from theme.js
-  window.addEventListener('themechange', function(e) {
-    applyMapTheme(e.detail.theme);
-  });
+  L.control.layers(baseLayers, null, { position: 'bottomleft' }).addTo(map);
 
   // User geolocation marker and accuracy circle; store last position for distance calc
   var userMarker = null;
@@ -1031,13 +1010,11 @@ document.addEventListener('DOMContentLoaded', function () {
       
       // Demo data when API fails - include the beaches user wants to search
       var demoLocations = [
-        { id: 1, name: 'HINAGDANAN Beach', lat: 9.6050, lng: 123.8050, rating: 5, address: 'Dauis, Panglao Island, Bohol', description: 'Famous cave beach with crystal clear waters and beautiful rock formations', fees: '₱50 entrance', facilities: 'Swimming, Cave tours, Restaurant', type: 'Resort' },
-        { id: 2, name: 'RANILA Beach Resort', lat: 10.725, lng: 124.009, rating: 4, address: 'Catmon, Cebu', description: 'White sand beach with cottages and clear blue waters', fees: '₱100 entrance', facilities: 'Cottages, Restaurant, Swimming', type: 'Resort' },
-        { id: 3, name: 'TURTLE POINT', lat: 10.3157, lng: 123.9850, rating: 5, address: 'Moalboal, Cebu', description: 'Marine sanctuary with sea turtles and coral reefs', fees: '₱150 with guide', facilities: 'Snorkeling, Diving, Turtle watching', type: 'Sanctuary' },
-        { id: 4, name: 'MAJESTIC Beach', lat: 10.4500, lng: 124.0200, rating: 5, address: 'Malapascua Island, Cebu', description: 'Pristine white sand beach with stunning sunset views', fees: 'Free', facilities: 'Swimming, Cliff diving, Camping', type: 'Public' },
-        { id: 5, name: 'Binongkalan Beach', lat: 10.725, lng: 124.009, rating: 4, address: 'Binongkalan, Catmon, Cebu', description: 'Beautiful beach with clear waters', fees: 'Free', facilities: 'Swimming, Snorkeling', type: 'Public' },
-        { id: 6, name: 'Guiwanon Beach', lat: 10.735, lng: 124.015, rating: 5, address: 'Guiwanon, Catmon, Cebu', description: 'White sand beach with cottages', fees: '₱50 entrance', facilities: 'Cottages, Restaurant', type: 'Resort' },
-        { id: 7, name: 'San Roque Beach', lat: 10.718, lng: 124.002, rating: 3, address: 'San Roque, Catmon, Cebu', description: 'Quiet beach for relaxation', fees: 'Free', facilities: 'Swimming', type: 'Public' }
+        { id: 1, name: 'Ranola Beach Resort', lat: 10.631678, lng: 124.028392, rating: 5, address: '10°37\'54.04"N 124°01\'42.21"E, Binongkalan, Catmon, Cebu', description: 'Beautiful beach resort in Binongkalan, Catmon, Cebu with clear blue waters', fees: '₱100 entrance', facilities: 'Cottages, Restaurant, Swimming', type: 'Resort' },
+        { id: 2, name: 'Lite Bay Resort', lat: 10.634139, lng: 124.028370, rating: 4, address: '10°38\'02.90"N 124°01\'42.13"E, Catmon, Cebu', description: 'Peaceful beach resort with serene atmosphere', fees: '₱80 entrance', facilities: 'Cottages, Restaurant', type: 'Resort' },
+        { id: 3, name: 'Majestique View Beach Resort', lat: 10.634681, lng: 124.027848, rating: 5, address: '10°38\'04.85"N 124°01\'40.25"E, Catmon, Cebu', description: 'Stunning beach resort with majestic views', fees: '₱150 entrance', facilities: 'Cottages, Restaurant, Swimming', type: 'Resort' },
+        { id: 4, name: 'Turtle Point Beach Resort', lat: 10.634739, lng: 124.027580, rating: 5, address: '10°38\'05.06"N 124°01\'39.29"E, Catmon, Cebu', description: 'Marine sanctuary with sea turtles and coral reefs', fees: '₱150 with guide', facilities: 'Snorkeling, Diving, Turtle watching', type: 'Sanctuary' },
+        { id: 5, name: 'Hinagdan Beach Resort', lat: 10.636244, lng: 124.026389, rating: 5, address: '10°38\'10.48"N 124°01\'35.00"E, Catmon, Cebu', description: 'Famous cave beach with crystal clear waters and beautiful rock formations', fees: '₱50 entrance', facilities: 'Swimming, Cave tours, Restaurant', type: 'Resort' }
       ];
       
       window.__placeCardsData = demoLocations;
@@ -1075,23 +1052,26 @@ document.addEventListener('DOMContentLoaded', function () {
               '</div>' +
             '</div>';
           
-          // Add marker to map
-          var marker = L.circleMarker([p.lat, p.lng], {
-            radius: 6,
-            color: 'rgba(126, 204, 224, 0.9)',
-            weight: 2,
-            fillColor: 'rgba(126, 204, 224, 0.55)',
-            fillOpacity: 1,
-          }).addTo(map).bindPopup('<div class="title">' + p.name + '</div>');
-          demoMarkers.push(marker);
-          
-          // Add click listeners
-          (function(i, mk){
-            card.querySelector('.btn-map').addEventListener('click', function(e){
-              e.stopPropagation();
-              if (mk) { map.setView(mk.getLatLng(), 14); mk.openPopup(); }
+          // Add markers for all 5 beach resorts with accurate coordinates
+          if (p.id >= 1 && p.id <= 5) {
+            var pinIcon = L.icon({
+              iconUrl: 'https://cdn-icons-png.flaticon.com/512/684/684908.png',
+              iconSize: [32, 32],
+              iconAnchor: [16, 32],
+              popupAnchor: [0, -32]
             });
-          })(idx, marker);
+            
+            var marker = L.marker([p.lat, p.lng], { icon: pinIcon }).addTo(map).bindPopup('<div class="title">' + p.name + '</div>');
+            demoMarkers.push(marker);
+            
+            // Add click listeners
+            (function(i, mk){
+              card.querySelector('.btn-map').addEventListener('click', function(e){
+                e.stopPropagation();
+                if (mk) { map.setView(mk.getLatLng(), 16); mk.openPopup(); }
+              });
+            })(idx, marker);
+          }
           
           cardsContainer.appendChild(card);
         });
@@ -1123,11 +1103,12 @@ document.addEventListener('DOMContentLoaded', function () {
   var chatInput = document.getElementById('ai-chat-input');
   var chatSend = document.getElementById('ai-chat-send');
   var chatMessages = document.getElementById('ai-chat-messages');
+  var chatPanel = document.getElementById('ai-chat-panel');
 
   // Toggle chat widget
   if (chatToggle) {
     chatToggle.addEventListener('click', function() {
-      chatWidget.classList.add('expanded');
+      chatPanel.classList.add('active');
       if (chatInput) chatInput.focus();
     });
   }
@@ -1135,14 +1116,14 @@ document.addEventListener('DOMContentLoaded', function () {
   // Close chat widget
   if (chatClose) {
     chatClose.addEventListener('click', function() {
-      chatWidget.classList.remove('expanded');
+      chatPanel.classList.remove('active');
     });
   }
 
   // Close on escape key
   document.addEventListener('keydown', function(e) {
-    if (e.key === 'Escape' && chatWidget.classList.contains('expanded')) {
-      chatWidget.classList.remove('expanded');
+    if (e.key === 'Escape' && chatPanel.classList.contains('active')) {
+      chatPanel.classList.remove('active');
     }
   });
 
