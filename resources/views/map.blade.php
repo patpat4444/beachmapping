@@ -56,6 +56,58 @@
       .landing-sidebar.collapsed {
         transform: translateX(-100%);
       }
+      /* Add blue tint to map tiles in dark mode to match app theme */
+      [data-theme="dark"] .leaflet-tile-pane {
+        filter: sepia(100%) hue-rotate(180deg) saturate(2);
+      }
+      
+      /* Dark mode for leaflet popup */
+      [data-theme="dark"] .leaflet-popup-content-wrapper {
+        background: #1e293b;
+        color: #ffffff;
+      }
+      [data-theme="dark"] .leaflet-popup-content h3,
+      [data-theme="dark"] .leaflet-popup-content .beach-popup h3 {
+        color: #ffffff !important;
+      }
+      [data-theme="dark"] .leaflet-popup-tip {
+        background: #1e293b;
+      }
+      [data-theme="dark"] .leaflet-container a.leaflet-popup-close-button {
+        color: #94a3b8;
+      }
+      [data-theme="dark"] .leaflet-container a.leaflet-popup-close-button:hover {
+        color: #ffffff;
+      }
+      
+      /* Beach name labels */
+      .beach-label {
+        background: rgba(255, 255, 255, 0.95);
+        border: none;
+        border-radius: 4px;
+        padding: 2px 6px;
+        font-size: 9px;
+        font-weight: 600;
+        color: #1a2a3a;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+        white-space: nowrap;
+        max-width: 120px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .beach-label:before {
+        display: none;
+      }
+      [data-theme="dark"] .beach-label {
+        background: rgba(21, 34, 53, 0.95);
+        color: #ffffff;
+      }
+      
+      /* Stagger labels to prevent crowding */
+      .leaflet-tooltip-bottom.beach-label {
+        margin-top: 8px;
+      }
+      
       /* AI Chat Widget Styles - Bottom Right */
       .ai-chat-widget {
         position: fixed;
@@ -79,11 +131,11 @@
         position: relative;
       }
       [data-theme="dark"] .ai-chat-circle {
-        background: #ffffff;
+        background: #1a2a3a;
         border-color: #1a2a3a;
       }
       [data-theme="dark"] .ai-chat-circle i {
-        color: #1a2a3a;
+        color: #ffffff;
       }
       .ai-chat-circle:hover {
         transform: scale(1.1);

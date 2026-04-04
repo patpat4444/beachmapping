@@ -19,20 +19,56 @@ document.addEventListener('DOMContentLoaded', function () {
   // Add zoom control to bottom left (above the layer control)
   L.control.zoom({ position: 'bottomleft' }).addTo(map);
 
-  // Define tile layers - only light mode
-  var lightMapLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    maxZoom: 19,
-    attribution: '&copy; OpenStreetMap contributors'
-  }).addTo(map);
-
-  var satelliteMapLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-    maxZoom: 19,
-    attribution: '&copy; Esri, DigitalGlobe, Earthstar Geographics'
+  // Define tile layers - CartoDB Light and Dark for auto theme switching
+  var cartoLightLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+    maxZoom: 20,
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
+  });
+  
+  var cartoDarkLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/dark_all/{z}/{x}/{y}{r}.png', {
+    maxZoom: 20,
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
   });
 
-  // Add layer control - only Map and Satellite options
+  var satelliteMapLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+    maxZoom: 17,
+    attribution: 'Tiles © Esri'
+  });
+  
+  // Auto-switch map tiles based on application's data-theme attribute
+  var currentBaseLayer = cartoLightLayer;
+  var htmlElement = document.documentElement;
+  var isDarkMode = htmlElement.getAttribute('data-theme') === 'dark';
+  
+  if (isDarkMode) {
+    cartoDarkLayer.addTo(map);
+    currentBaseLayer = cartoDarkLayer;
+  } else {
+    cartoLightLayer.addTo(map);
+  }
+  
+  // Listen for data-theme changes using MutationObserver
+  var observer = new MutationObserver(function(mutations) {
+    mutations.forEach(function(mutation) {
+      if (mutation.attributeName === 'data-theme') {
+        var newTheme = htmlElement.getAttribute('data-theme');
+        if (newTheme === 'dark') {
+          map.removeLayer(cartoLightLayer);
+          cartoDarkLayer.addTo(map);
+          currentBaseLayer = cartoDarkLayer;
+        } else {
+          map.removeLayer(cartoDarkLayer);
+          cartoLightLayer.addTo(map);
+          currentBaseLayer = cartoLightLayer;
+        }
+      }
+    });
+  });
+  observer.observe(htmlElement, { attributes: true });
+
+  // Add layer control - 2D View (auto light/dark), Satellite
   var baseLayers = {
-    'Map': lightMapLayer,
+    '2D View': currentBaseLayer,
     'Satellite': satelliteMapLayer
   };
   L.control.layers(baseLayers, null, { position: 'bottomleft' }).addTo(map);
@@ -1052,31 +1088,55 @@ document.addEventListener('DOMContentLoaded', function () {
               '</div>' +
             '</div>';
           
-          // Add markers for all 5 beach resorts with accurate coordinates
-          if (p.id >= 1 && p.id <= 5) {
-            var pinIcon = L.icon({
-              iconUrl: 'https://cdn-icons-png.flaticon.com/512/684/684908.png',
-              iconSize: [32, 32],
-              iconAnchor: [16, 32],
-              popupAnchor: [0, -32]
+          (function(idx, marker){
+            card.querySelector('.btn-map').addEventListener('click', function(e){
+              e.stopPropagation();
+              if (marker) { map.setView(marker.getLatLng(), 14); marker.openPopup(); }
             });
-            
-            var marker = L.marker([p.lat, p.lng], { icon: pinIcon }).addTo(map).bindPopup('<div class="title">' + p.name + '</div>');
-            demoMarkers.push(marker);
-            
-            // Add click listeners
-            (function(i, mk){
-              card.querySelector('.btn-map').addEventListener('click', function(e){
-                e.stopPropagation();
-                if (mk) { map.setView(mk.getLatLng(), 16); mk.openPopup(); }
-              });
-            })(idx, marker);
-          }
+          })(idx, demoMarkers[idx]);
           
           cardsContainer.appendChild(card);
         });
       }
       
+      // Render beach pins on map for first 5 beaches only
+      demoLocations.slice(0, 5).forEach(function(p) {
+        var pinIcon = L.icon({
+          iconUrl: 'https://cdn-icons-png.flaticon.com/512/684/684908.png',
+          iconSize: [32, 32],
+          iconAnchor: [16, 32]
+        });
+        // Compact popup styled like sidebar card
+        var popupHtml = '<div class="beach-popup" style="min-width:180px;font-family:Segoe UI,sans-serif;">' +
+          '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">' +
+            '<h3 style="margin:0;font-size:14px;font-weight:700;color:#1a2a3a;">' + p.name + '</h3>' +
+            '<span style="background:#dcfce7;color:#16a34a;padding:2px 8px;border-radius:12px;font-size:10px;font-weight:600;">Open</span>' +
+          '</div>' +
+          '<div style="background:#f1f5f9;border-radius:6px;height:60px;display:flex;align-items:center;justify-content:center;margin-bottom:8px;">' +
+            '<i class="fa-regular fa-image" style="color:#94a3b8;font-size:20px;"></i>' +
+          '</div>' +
+          '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">' +
+            '<span style="color:#fbbf24;font-size:11px;">' + '<i class="fa-solid fa-star"></i>'.repeat(5) + '</span>' +
+            '<span style="color:#64748b;font-size:11px;"><i class="fa-solid fa-location-dot"></i> — km</span>' +
+          '</div>' +
+          '<span style="background:#f1f5f9;color:#64748b;padding:2px 8px;border-radius:4px;font-size:10px;display:inline-block;margin-bottom:8px;">' + p.type + '</span>' +
+          '<button onclick="window.location.href=\'/beach/' + p.id + '\'" style="width:100%;padding:6px 12px;background:#1e293b;color:white;border:1px solid #ffffff;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;transition:all 0.2s;" onmouseover="this.style.background=\'#334155\'" onmouseout="this.style.background=\'#1e293b\'">View Details</button>' +
+        '</div>';
+        var marker = L.marker([p.lat, p.lng], { icon: pinIcon }).addTo(map).bindPopup(popupHtml);
+        
+        // Add permanent label with beach name - stagger directions and keep close to pins
+        var labelDirection = (p.id % 2 === 0) ? 'right' : 'left';
+        var labelOffset = (p.id % 2 === 0) ? [5, -5] : [-5, -5];
+        marker.bindTooltip(p.name, {
+          permanent: true,
+          direction: labelDirection,
+          offset: labelOffset,
+          className: 'beach-label'
+        });
+        
+        demoMarkers.push(marker);
+      });
+
       // Setup search for demo data
       var searchInput = document.getElementById('search-input');
       if (searchInput) {
