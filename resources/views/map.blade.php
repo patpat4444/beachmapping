@@ -9,16 +9,46 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" />
     <style>
       /* Collapsible Sidebar Styles */
+      :root {
+        --sidebar-bg: white;
+        --sidebar-text: #1a2a3a;
+        --sidebar-text-secondary: #4a5a6a;
+        --sidebar-border: #e2e8f0;
+        --card-bg: white;
+        --card-border: #e2e8f0;
+        --input-bg: white;
+        --input-border: #e2e8f0;
+        --accent-color: #2a9db8;
+        --accent-hover: #1a8da8;
+        --close-btn-bg: #f1f5f9;
+        --close-btn-hover: #e2e8f0;
+      }
+      
+      [data-theme="dark"] {
+        --sidebar-bg: #152235;
+        --sidebar-text: #ffffff;
+        --sidebar-text-secondary: #a0b0c0;
+        --sidebar-border: #2a3a4a;
+        --card-bg: #1a2a3a;
+        --card-border: #2a3a4a;
+        --input-bg: #1a2a3a;
+        --input-border: #2a3a4a;
+        --accent-color: #7ecce0;
+        --accent-hover: #5ab8d0;
+        --close-btn-bg: #2a3a4a;
+        --close-btn-hover: #3a4a5a;
+      }
+      
       .landing-sidebar {
         position: fixed;
         left: 0;
         top: 0;
         height: 100vh;
         width: 320px;
-        background: white;
+        background: var(--sidebar-bg);
         z-index: 1000;
         transform: translateX(0);
-        transition: transform 0.3s ease;
+        transition: transform 0.3s ease, background 0.3s ease;
         box-shadow: 2px 0 10px rgba(0,0,0,0.1);
         overflow-y: auto;
         padding: 20px;
@@ -48,6 +78,13 @@
         transition: transform 0.3s ease, box-shadow 0.3s ease;
         position: relative;
       }
+      [data-theme="dark"] .ai-chat-circle {
+        background: #ffffff;
+        border-color: #1a2a3a;
+      }
+      [data-theme="dark"] .ai-chat-circle i {
+        color: #1a2a3a;
+      }
       .ai-chat-circle:hover {
         transform: scale(1.1);
         box-shadow: 0 6px 30px rgba(0, 0, 0, 0.4);
@@ -64,6 +101,9 @@
         background: rgba(26, 42, 58, 0.2);
         animation: pulse 2s infinite;
         z-index: -1;
+      }
+      [data-theme="dark"] .ai-chat-pulse {
+        background: rgba(126, 204, 224, 0.2);
       }
       @keyframes pulse {
         0% { transform: scale(1); opacity: 1; }
@@ -83,6 +123,10 @@
         flex-direction: column;
         overflow: hidden;
         border: 1px solid rgba(255,255,255,0.3);
+      }
+      [data-theme="dark"] .ai-chat-panel {
+        background: rgba(21, 34, 53, 0.98);
+        border-color: rgba(42, 58, 74, 0.5);
       }
       .ai-chat-panel.active {
         display: flex;
@@ -106,9 +150,16 @@
         color: #1a2a3a;
         transition: all 0.3s ease;
       }
+      [data-theme="dark"] .sidebar-toggle {
+        background: #1a2a3a;
+        color: #ffffff;
+      }
       .sidebar-toggle:hover {
         background: #f1f5f9;
         transform: scale(1.05);
+      }
+      [data-theme="dark"] .sidebar-toggle:hover {
+        background: #2a3a4a;
       }
       .sidebar-toggle.sidebar-open {
         left: 400px;
@@ -121,7 +172,7 @@
         top: 15px;
         width: 35px;
         height: 35px;
-        background: #f1f5f9;
+        background: var(--close-btn-bg);
         border: none;
         border-radius: 8px;
         cursor: pointer;
@@ -129,12 +180,12 @@
         align-items: center;
         justify-content: center;
         font-size: 16px;
-        color: #64748b;
+        color: var(--sidebar-text-secondary);
         transition: all 0.2s ease;
       }
       .sidebar-close-btn:hover {
-        background: #e2e8f0;
-        color: #333;
+        background: var(--close-btn-hover);
+        color: var(--sidebar-text);
       }
       .landing-map-wrap {
         margin-left: 0;
@@ -166,15 +217,33 @@
         gap: 10px;
         box-shadow: 0 2px 8px rgba(0,0,0,0.15);
         width: 280px;
+        transition: background 0.3s ease;
+      }
+      [data-theme="dark"] .header-search-box {
+        background: #152235;
       }
       .header-search-box input {
         border: none;
         outline: none;
         flex: 1;
         font-size: 14px;
+        background: transparent;
+        color: #1a2a3a;
+      }
+      [data-theme="dark"] .header-search-box input {
+        color: #ffffff;
+      }
+      .header-search-box input::placeholder {
+        color: #94a3b8;
+      }
+      [data-theme="dark"] .header-search-box input::placeholder {
+        color: #6a7a8a;
       }
       .header-search-box i {
         color: #666;
+      }
+      [data-theme="dark"] .header-search-box i {
+        color: #a0b0c0;
       }
       .user-menu-btn {
         width: 45px;
@@ -187,6 +256,13 @@
         display: flex;
         align-items: center;
         justify-content: center;
+        transition: background 0.3s ease;
+      }
+      [data-theme="dark"] .user-menu-btn {
+        background: #152235;
+      }
+      [data-theme="dark"] .user-menu-btn i {
+        color: #a0b0c0;
       }
       .sidebar-header {
         margin-bottom: 20px;
@@ -198,12 +274,12 @@
       .sidebar-title {
         font-size: 1.5rem;
         font-weight: 700;
-        color: #1a2a3a;
+        color: var(--sidebar-text);
         margin: 0;
         line-height: 1;
       }
       .sidebar-title em {
-        color: #2a9db8;
+        color: var(--accent-color);
         font-style: italic;
       }
       
@@ -219,13 +295,27 @@
       }
       .filter-group .form-select {
         width: 100%;
-        padding: 10px 35px 10px 12px;
-        border: 1px solid #e2e8f0;
-        border-radius: 8px;
-        background: white;
-        font-size: 14px;
+        padding: 10px 14px;
+        border: 1px solid var(--input-border);
+        border-radius: 10px;
+        font-size: 0.9rem;
+        background: var(--input-bg);
+        color: var(--sidebar-text);
         cursor: pointer;
         appearance: none;
+        -webkit-appearance: none;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23666' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: right 12px center;
+        padding-right: 32px;
+      }
+      [data-theme="dark"] .filter-group .form-select {
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23a0b0c0' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+      }
+      .filter-group .form-select:focus {
+        outline: none;
+        border-color: var(--accent-color);
+        box-shadow: 0 0 0 3px rgba(42, 157, 184, 0.1);
       }
       .filter-arrow {
         position: absolute;
@@ -241,16 +331,24 @@
       .btn-locate {
         width: 100%;
         padding: 12px;
-        background: #2a9db8;
+        background: var(--accent-color);
         color: white;
         border: none;
         border-radius: 8px;
         font-weight: 600;
         margin-bottom: 16px;
         cursor: pointer;
+        transition: background 0.2s ease;
+      }
+      [data-theme="dark"] .btn-locate {
+        background: var(--accent-color);
+        color: #152235;
+      }
+      .btn-locate:hover {
+        background: var(--accent-hover);
       }
       .results-count {
-        color: #64748b;
+        color: var(--sidebar-text-secondary);
         font-size: 14px;
         margin-bottom: 16px;
       }
@@ -262,10 +360,11 @@
         gap: 16px;
       }
       .beach-card {
-        background: white;
-        border: 1px solid #e2e8f0;
+        background: var(--card-bg);
+        border: 1px solid var(--card-border);
         border-radius: 12px;
         padding: 16px;
+        transition: background 0.3s ease, border-color 0.3s ease;
       }
       .card-header {
         display: flex;
@@ -276,7 +375,7 @@
       .beach-name {
         font-size: 1.1rem;
         font-weight: 700;
-        color: #1a2a3a;
+        color: var(--sidebar-text);
         margin: 0;
       }
       .status-badge {
@@ -287,8 +386,12 @@
         font-size: 12px;
         font-weight: 600;
       }
+      [data-theme="dark"] .status-badge {
+        background: rgba(22, 163, 74, 0.2);
+        color: #4ade80;
+      }
       .card-photo {
-        background: #f1f5f9;
+        background: var(--input-bg);
         border-radius: 8px;
         height: 120px;
         display: flex;
@@ -298,7 +401,7 @@
       }
       .photo-placeholder {
         text-align: center;
-        color: #94a3b8;
+        color: var(--sidebar-text-secondary);
       }
       .photo-placeholder i {
         font-size: 24px;
@@ -318,7 +421,7 @@
         color: #fbbf24;
       }
       .distance {
-        color: #64748b;
+        color: var(--sidebar-text-secondary);
         font-size: 14px;
       }
       .beach-tags {
@@ -326,11 +429,15 @@
         gap: 8px;
       }
       .tag {
-        background: #f1f5f9;
-        color: #64748b;
+        background: var(--input-bg);
+        color: var(--sidebar-text-secondary);
         padding: 4px 12px;
         border-radius: 6px;
         font-size: 12px;
+      }
+      [data-theme="dark"] .tag {
+        background: #2a3a4a;
+        color: #a0b0c0;
       }
       .card-actions {
         display: flex;
@@ -340,24 +447,34 @@
       .btn-view {
         flex: 1;
         padding: 6px 12px;
-        background: #2a9db8;
+        background: var(--accent-color);
         color: white;
         border: none;
         border-radius: 6px;
         font-weight: 600;
         font-size: 13px;
         cursor: pointer;
+        transition: background 0.2s ease;
+      }
+      [data-theme="dark"] .btn-view {
+        background: var(--accent-color);
+        color: #152235;
       }
       .btn-map {
         flex: 1;
         padding: 6px 12px;
-        background: #f1f5f9;
-        color: #64748b;
+        background: var(--input-bg);
+        color: var(--sidebar-text-secondary);
         border: none;
         border-radius: 6px;
         font-weight: 600;
         font-size: 13px;
         cursor: pointer;
+        transition: background 0.2s ease;
+      }
+      [data-theme="dark"] .btn-map {
+        background: #2a3a4a;
+        color: #a0b0c0;
       }
     </style>
   </head>
