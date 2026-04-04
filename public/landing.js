@@ -843,8 +843,14 @@ document.addEventListener('DOMContentLoaded', function () {
   }
 
   // Fetch saved locations from API and render markers
-  fetch('/api/locations')
-    .then(function(res){ return res.json(); })
+  var controller = new AbortController();
+  var timeoutId = setTimeout(function() { controller.abort(); }, 3000); // 3 second timeout
+  
+  fetch('/api/locations', { signal: controller.signal })
+    .then(function(res){ 
+      clearTimeout(timeoutId);
+      return res.json(); 
+    })
     .then(function(locations){
       locations = locations || [];
       window.__placeCardsData = locations;
@@ -1042,10 +1048,10 @@ document.addEventListener('DOMContentLoaded', function () {
     })
     .catch(function(err){
       console.error('Failed to load locations:', err);
-      console.log('Using demo data instead...');
+      console.log('Using local beach data...');
       
-      // Demo data when API fails - include the beaches user wants to search
-      var demoLocations = [
+      // Local beach data (Binongkalan beaches)
+      var beachLocations = [
         { id: 1, name: 'Ranola Beach Resort', lat: 10.631678, lng: 124.028392, rating: 5, address: '10°37\'54.04"N 124°01\'42.21"E, Binongkalan, Catmon, Cebu', description: 'Beautiful beach resort in Binongkalan, Catmon, Cebu with clear blue waters', fees: '₱100 entrance', facilities: 'Cottages, Restaurant, Swimming', type: 'Resort' },
         { id: 2, name: 'Lite Bay Resort', lat: 10.634139, lng: 124.028370, rating: 4, address: '10°38\'02.90"N 124°01\'42.13"E, Catmon, Cebu', description: 'Peaceful beach resort with serene atmosphere', fees: '₱80 entrance', facilities: 'Cottages, Restaurant', type: 'Resort' },
         { id: 3, name: 'Majestique View Beach Resort', lat: 10.634681, lng: 124.027848, rating: 5, address: '10°38\'04.85"N 124°01\'40.25"E, Catmon, Cebu', description: 'Stunning beach resort with majestic views', fees: '₱150 entrance', facilities: 'Cottages, Restaurant, Swimming', type: 'Resort' },
@@ -1053,15 +1059,15 @@ document.addEventListener('DOMContentLoaded', function () {
         { id: 5, name: 'Hinagdan Beach Resort', lat: 10.636244, lng: 124.026389, rating: 5, address: '10°38\'10.48"N 124°01\'35.00"E, Catmon, Cebu', description: 'Famous cave beach with crystal clear waters and beautiful rock formations', fees: '₱50 entrance', facilities: 'Swimming, Cave tours, Restaurant', type: 'Resort' }
       ];
       
-      window.__placeCardsData = demoLocations;
+      window.__placeCardsData = beachLocations;
       
-      // Simple render of demo data
+      // Render beach cards
       var cardsContainer = document.getElementById('place-cards');
       if (cardsContainer) {
         cardsContainer.innerHTML = '';
-        var demoMarkers = [];
+        var beachMarkers = [];
         
-        demoLocations.forEach(function(p, idx) {
+        beachLocations.forEach(function(p, idx) {
           var card = document.createElement('div');
           card.className = 'beach-card';
           card.dataset.index = idx;
@@ -1093,14 +1099,14 @@ document.addEventListener('DOMContentLoaded', function () {
               e.stopPropagation();
               if (marker) { map.setView(marker.getLatLng(), 14); marker.openPopup(); }
             });
-          })(idx, demoMarkers[idx]);
+          })(idx, beachMarkers[idx]);
           
           cardsContainer.appendChild(card);
         });
       }
       
-      // Render beach pins on map for first 5 beaches only
-      demoLocations.slice(0, 5).forEach(function(p) {
+      // Render beach pins on map
+      beachLocations.forEach(function(p) {
         var pinIcon = L.icon({
           iconUrl: 'https://cdn-icons-png.flaticon.com/512/684/684908.png',
           iconSize: [32, 32],
@@ -1134,10 +1140,10 @@ document.addEventListener('DOMContentLoaded', function () {
           className: 'beach-label'
         });
         
-        demoMarkers.push(marker);
+        beachMarkers.push(marker);
       });
 
-      // Setup search for demo data
+      // Setup search for beach data
       var searchInput = document.getElementById('search-input');
       if (searchInput) {
         searchInput.addEventListener('input', function(e){
@@ -1145,7 +1151,7 @@ document.addEventListener('DOMContentLoaded', function () {
           var cards = document.querySelectorAll('#place-cards .beach-card');
           
           cards.forEach(function(card, idx){
-            var location = demoLocations[idx];
+            var location = beachLocations[idx];
             if (!location) return;
             
             var matches = location.name.toLowerCase().includes(searchQuery) ||
