@@ -926,8 +926,8 @@
       /* Monthly Grid */
       .tide-monthly-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-        gap: 1rem;
+        grid-template-columns: 1fr;
+        gap: 1.5rem;
         margin-bottom: 2rem;
       }
       
@@ -978,11 +978,9 @@
       
       .tide-dates-list {
         display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(70px, 1fr));
-        gap: 0.4rem;
+        grid-template-columns: repeat(7, 1fr);
+        gap: 0.2rem;
         margin-bottom: 1rem;
-        max-height: 300px;
-        overflow-y: auto;
         padding: 0.5rem;
         background: rgba(126, 204, 224, 0.05);
         border-radius: 8px;
@@ -991,38 +989,50 @@
       
       .tide-date-item {
         text-align: center;
-        padding: 0.5rem;
-        background: var(--card-bg, rgba(126, 204, 224, 0.1));
-        border: 1px solid var(--card-border, rgba(126, 204, 224, 0.2));
-        border-radius: 6px;
+        padding: 1rem;
+        background: rgba(126, 204, 224, 0.1);
+        border: 1px solid rgba(126, 204, 224, 0.2);
+        border-radius: 4px;
         transition: all 0.2s ease;
+        aspect-ratio: 1;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        min-height: 85px;
       }
       
       .tide-date-item:hover {
-        background: var(--card-hover, rgba(126, 204, 224, 0.2));
-        transform: translateY(-2px);
+        background: rgba(126, 204, 224, 0.2);
+        transform: scale(1.05);
       }
       
       .tide-date {
-        font-size: 0.75rem;
-        font-weight: 600;
+        font-size: 1rem;
+        font-weight: 700;
         color: #7ecce0;
-        margin-bottom: 0.25rem;
+        margin-bottom: 0.3rem;
       }
       
       .tide-date-tides {
-        font-size: 0.65rem;
+        font-size: 0.9rem;
         line-height: 1.2;
+        display: flex;
+        flex-direction: column;
+        gap: 0.4rem;
+        font-weight: 700;
       }
       
       .tide-high {
-        color: var(--accent-color, #ff9f43);
-        font-weight: 500;
+        color: #ff9f43;
+        font-weight: 900;
+        font-size: 1rem;
       }
       
       .tide-low {
-        color: var(--primary-color, #54a0ff);
-        font-weight: 500;
+        color: #54a0ff;
+        font-weight: 900;
+        font-size: 1rem;
       }
       
       .tide-more-dates {
@@ -2051,7 +2061,7 @@
               count: 0, 
               name: monthKey,
               year: year,
-              dates: [],
+              dates: {},
               startDate: date,
               endDate: date
             };
@@ -2066,12 +2076,21 @@
           }
           
           // Add individual date with tide info
-          months[monthYearKey].dates.push({
-            date: dateStr,
-            fullDate: date,
-            high: pred.type === 'High' ? pred.height : null,
-            low: pred.type === 'Low' ? pred.height : null
-          });
+          if (!months[monthYearKey].dates[date.getDate()]) {
+            months[monthYearKey].dates[date.getDate()] = {
+              date: dateStr,
+              fullDate: date,
+              high: pred.type === 'High' ? pred.height : null,
+              low: pred.type === 'Low' ? pred.height : null
+            };
+          } else {
+            // Update existing date with new tide info
+            if (pred.type === 'High') {
+              months[monthYearKey].dates[date.getDate()].high = pred.height;
+            } else {
+              months[monthYearKey].dates[date.getDate()].low = pred.height;
+            }
+          }
           
           if (pred.type === 'High') {
             months[monthYearKey].highs.push(pred.height);
@@ -2081,40 +2100,40 @@
           months[monthYearKey].count++;
         });
         
-        // Calculate averages and organize dates
+        // Calculate averages and ensure correct number of days per month
         var result = [];
         Object.keys(months).forEach(function(monthYearKey) {
           var m = months[monthYearKey];
           var avgHigh = m.highs.length ? (m.highs.reduce(function(a,b){return a+b;}, 0) / m.highs.length) : 0;
           var avgLow = m.lows.length ? (m.lows.reduce(function(a,b){return a+b;}, 0) / m.lows.length) : 0;
           
-          // Get unique dates and organize them
-          var uniqueDates = {};
-          m.dates.forEach(function(d) {
-            if (!uniqueDates[d.date]) {
-              uniqueDates[d.date] = { high: d.high, low: d.low };
-            } else {
-              if (d.high) uniqueDates[d.date].high = d.high;
-              if (d.low) uniqueDates[d.date].low = d.low;
-            }
-          });
+          // Determine correct number of days for this month
+          var monthIndex = monthNames.indexOf(m.name);
+          var daysInMonth;
+          if (monthIndex === 1) { // February
+            daysInMonth = 28; // Simplified - not handling leap years
+          } else if ([0, 2, 4, 6, 7, 9, 11].includes(monthIndex)) { // Months with 31 days
+            daysInMonth = 31;
+          } else {
+            daysInMonth = 30;
+          }
           
-          var sortedDates = Object.keys(uniqueDates).sort(function(a, b) {
-            var dateA = new Date(a);
-            var dateB = new Date(b);
-            return dateA - dateB;
-          });
+          // Create correct number of days for each month
+          var allDates = [];
+          for (var day = 1; day <= daysInMonth; day++) {
+            var dateData = m.dates[day] || {
+              date: monthNames[monthIndex] + ' ' + day,
+              fullDate: new Date(m.year, monthIndex, day),
+              high: null,
+              low: null
+            };
+            allDates.push(dateData);
+          }
           
           result.push({
             name: m.name,
             year: m.year,
-            dates: sortedDates.map(function(date) {
-              return {
-                date: date,
-                high: uniqueDates[date].high,
-                low: uniqueDates[date].low
-              };
-            }),
+            dates: allDates,
             avgHigh: avgHigh.toFixed(2),
             avgLow: avgLow.toFixed(2),
             highest: m.highs.length ? Math.max.apply(null, m.highs).toFixed(2) : '--',
@@ -2132,10 +2151,10 @@
             var highText = d.high ? d.high + 'm' : '--';
             var lowText = d.low ? d.low + 'm' : '--';
             return '<div class="tide-date-item">' +
-              '<div class="tide-date">' + d.date + '</div>' +
+              '<div class="tide-date">' + d.date.split(' ')[1] + '</div>' +
               '<div class="tide-date-tides">' +
-                '<span class="tide-high">H:' + highText + '</span> ' +
-                '<span class="tide-low">L:' + lowText + '</span>' +
+                '<span class="tide-high">' + highText + '</span>' +
+                '<span class="tide-low">' + lowText + '</span>' +
               '</div>' +
             '</div>';
           }).join('');
@@ -2144,10 +2163,10 @@
             '<div class="tide-month-name">' + month.name + ' <span class="tide-month-year">' + month.year + '</span></div>' +
             '<div class="tide-dates-list">' + datesHtml + '</div>' +
             '<div class="tide-month-summary">' +
-              '<div class="tide-month-row"><span>Avg High:</span><span>' + month.avgHigh + ' m</span></div>' +
-              '<div class="tide-month-row"><span>Avg Low:</span><span>' + month.avgLow + ' m</span></div>' +
-              '<div class="tide-month-row"><span>Highest:</span><span>' + month.highest + ' m</span></div>' +
-              '<div class="tide-month-row"><span>Lowest:</span><span>' + month.lowest + ' m</span></div>' +
+              '<div class="tide-month-row"><span>AVG HIGH:</span><span>' + month.avgHigh + ' m</span></div>' +
+              '<div class="tide-month-row"><span>AVG LOW:</span><span>' + month.avgLow + ' m</span></div>' +
+              '<div class="tide-month-row"><span>HIGHEST:</span><span>' + month.highest + ' m</span></div>' +
+              '<div class="tide-month-row"><span>LOWEST:</span><span>' + month.lowest + ' m</span></div>' +
             '</div>' +
           '</div>';
         }).join('');

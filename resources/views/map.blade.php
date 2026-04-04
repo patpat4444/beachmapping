@@ -8,20 +8,71 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" />
     <style>
+      /* Website Color Variables */
+      :root {
+        /* Light mode colors */
+        --bg-primary: #f0f7fa;
+        --bg-secondary: #e8f4f8;
+        --bg-card: #ffffff;
+        --bg-footer: #1a2a3a;
+        --text-primary: #1a2a3a;
+        --text-secondary: #4a5a6a;
+        --text-muted: #7a8a9a;
+        --text-light: #ffffff;
+        --accent-color: #2a9db8;
+        --accent-light: #7ecce0;
+        --accent-dark: #1a7a8f;
+        --border-color: #d0e0e8;
+        --shadow-color: rgba(0, 0, 0, 0.08);
+        --toggle-bg: #e0e8f0;
+        --toggle-btn: #ffffff;
+        --circle-overlay: rgba(122, 188, 204, 0.15);
+        --card-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+        --btn-primary-bg: #2a9db8;
+        --btn-primary-hover: #1a8da8;
+        --badge-bg: rgba(42, 157, 184, 0.1);
+        --section-alt-bg: #e0f0f5;
+      }
+
+      [data-theme="dark"] {
+        /* Dark mode colors */
+        --bg-primary: #0a1520;
+        --bg-secondary: #0d1d28;
+        --bg-card: #152235;
+        --bg-footer: #0a1520;
+        --text-primary: #ffffff;
+        --text-secondary: #a0b0c0;
+        --text-muted: #6a7a8a;
+        --text-light: #ffffff;
+        --accent-color: #7ecce0;
+        --accent-light: #5ab8d0;
+        --accent-dark: #4a98a8;
+        --border-color: #2a3a4a;
+        --shadow-color: rgba(0, 0, 0, 0.3);
+        --toggle-bg: #2a3a4a;
+        --toggle-btn: #7ecce0;
+        --circle-overlay: rgba(126, 204, 224, 0.08);
+        --card-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+        --btn-primary-bg: #7ecce0;
+        --btn-primary-hover: #5ab8d0;
+        --badge-bg: rgba(126, 204, 224, 0.15);
+        --section-alt-bg: #0d1d28;
+      }
+
       /* Collapsible Sidebar Styles */
       :root {
-        --sidebar-bg: white;
-        --sidebar-text: #1a2a3a;
-        --sidebar-text-secondary: #4a5a6a;
-        --sidebar-border: #e2e8f0;
-        --card-bg: white;
-        --card-border: #e2e8f0;
-        --input-bg: white;
-        --input-border: #e2e8f0;
-        --accent-color: #2a9db8;
-        --accent-hover: #1a8da8;
-        --close-btn-bg: #f1f5f9;
-        --close-btn-hover: #e2e8f0;
+        --sidebar-bg: #1e3a8a;
+        --sidebar-text: #ffffff;
+        --sidebar-text-secondary: #93c5fd;
+        --sidebar-border: #1e40af;
+        --card-bg: #1e40af;
+        --card-border: #2563eb;
+        --input-bg: #1e40af;
+        --input-border: #2563eb;
+        --accent-color: #60a5fa;
+        --accent-hover: #3b82f6;
+        --close-btn-bg: #1e40af;
+        --close-btn-hover: #2563eb;
       }
       
       [data-theme="dark"] {
@@ -46,7 +97,7 @@
         height: 100vh;
         width: 320px;
         background: var(--sidebar-bg);
-        z-index: 1000;
+        z-index: 1002;
         transform: translateX(0);
         transition: transform 0.3s ease, background 0.3s ease;
         box-shadow: 2px 0 10px rgba(0,0,0,0.1);
@@ -117,45 +168,45 @@
         font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
       }
       .ai-chat-circle {
-        width: 60px;
-        height: 60px;
+        width: 50px;
+        height: 50px;
         border-radius: 50%;
-        background: #ffffff;
-        border: 2px solid #1a2a3a;
+        background: var(--accent-color);
+        border: 2px solid var(--accent-dark);
         cursor: pointer;
         display: flex;
         align-items: center;
         justify-content: center;
-        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+        box-shadow: var(--card-shadow);
         transition: transform 0.3s ease, box-shadow 0.3s ease;
         position: relative;
       }
       [data-theme="dark"] .ai-chat-circle {
-        background: #1a2a3a;
+        background: #ffffff;
         border-color: #1a2a3a;
       }
       [data-theme="dark"] .ai-chat-circle i {
-        color: #ffffff;
+        color: #1a2a3a;
       }
       .ai-chat-circle:hover {
         transform: scale(1.1);
         box-shadow: 0 6px 30px rgba(0, 0, 0, 0.4);
       }
       .ai-chat-circle i {
-        color: #1a2a3a;
-        font-size: 24px;
+        color: var(--text-light);
+        font-size: 20px;
       }
       .ai-chat-pulse {
         position: absolute;
         width: 100%;
         height: 100%;
         border-radius: 50%;
-        background: rgba(26, 42, 58, 0.2);
+        background: var(--circle-overlay);
         animation: pulse 2s infinite;
         z-index: -1;
       }
       [data-theme="dark"] .ai-chat-pulse {
-        background: rgba(126, 204, 224, 0.2);
+        background: var(--circle-overlay);
       }
       @keyframes pulse {
         0% { transform: scale(1); opacity: 1; }
@@ -163,25 +214,154 @@
       }
       .ai-chat-panel {
         position: absolute;
-        bottom: 80px;
+        bottom: 70px;
         right: 0;
-        width: 350px;
-        height: 500px;
-        background: rgba(255, 255, 255, 0.98);
+        width: 300px;
+        height: 400px;
+        background: var(--bg-card);
         backdrop-filter: blur(20px);
-        border-radius: 20px;
-        box-shadow: 0 8px 32px rgba(0,0,0,0.15);
+        border-radius: 16px;
+        box-shadow: var(--card-shadow);
         display: none;
         flex-direction: column;
         overflow: hidden;
-        border: 1px solid rgba(255,255,255,0.3);
+        border: 1px solid var(--border-color);
       }
       [data-theme="dark"] .ai-chat-panel {
-        background: rgba(21, 34, 53, 0.98);
-        border-color: rgba(42, 58, 74, 0.5);
+        background: var(--bg-card);
+        border-color: var(--border-color);
       }
       .ai-chat-panel.active {
         display: flex;
+      }
+      .ai-chat-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 1rem;
+        background: var(--bg-secondary);
+        border-bottom: 1px solid var(--border-color);
+      }
+      .ai-header-info {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+      }
+      .ai-bot-icon {
+        color: var(--accent-color);
+        font-size: 1.25rem;
+      }
+      .ai-chat-title {
+        color: var(--text-primary);
+        font-size: 1rem;
+        font-weight: 600;
+        margin: 0;
+      }
+      .ai-status {
+        color: var(--text-muted);
+        font-size: 0.75rem;
+      }
+      .ai-chat-close {
+        background: none;
+        border: none;
+        color: var(--text-muted);
+        font-size: 1.25rem;
+        cursor: pointer;
+        padding: 0.5rem;
+        border-radius: 0.5rem;
+        transition: background 0.2s ease;
+      }
+      .ai-chat-close:hover {
+        background: var(--badge-bg);
+      }
+      .ai-chat-body {
+        flex: 1;
+        padding: 1rem;
+        overflow-y: auto;
+        background: var(--bg-card);
+      }
+      .ai-chat-messages {
+        margin-bottom: 1rem;
+      }
+      .ai-message-bubble {
+        background: var(--badge-bg);
+        color: var(--text-primary);
+        padding: 0.75rem;
+        border-radius: 1rem;
+        margin-bottom: 0.75rem;
+        font-size: 0.875rem;
+        line-height: 1.4;
+      }
+      .ai-message-bubble.ai-bot {
+        border-bottom-left-radius: 0.25rem;
+      }
+      .quote-icon {
+        color: var(--accent-color);
+        font-size: 0.75rem;
+        margin-right: 0.5rem;
+      }
+      .ai-suggestions {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+      }
+      .suggestion-chip {
+        background: var(--badge-bg);
+        border: 1px solid var(--border-color);
+        color: var(--text-primary);
+        padding: 0.5rem 0.75rem;
+        border-radius: 0.5rem;
+        font-size: 0.75rem;
+        cursor: pointer;
+        transition: background 0.2s ease;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        text-align: left;
+      }
+      .suggestion-chip:hover {
+        background: var(--accent-light);
+        color: var(--text-light);
+      }
+      .ai-chat-footer {
+        padding: 1rem;
+        background: var(--bg-secondary);
+        border-top: 1px solid var(--border-color);
+      }
+      .ai-input-row {
+        display: flex;
+        gap: 0.5rem;
+        align-items: center;
+      }
+      .ai-input {
+        flex: 1;
+        background: var(--bg-primary);
+        border: 1px solid var(--border-color);
+        color: var(--text-primary);
+        padding: 0.5rem 0.75rem;
+        border-radius: 0.5rem;
+        font-size: 0.875rem;
+        outline: none;
+      }
+      .ai-input::placeholder {
+        color: var(--text-muted);
+      }
+      .ai-input:focus {
+        border-color: var(--accent-color);
+        background: var(--bg-card);
+      }
+      .ai-send {
+        background: var(--btn-primary-bg);
+        border: none;
+        color: var(--text-light);
+        padding: 0.5rem 0.75rem;
+        border-radius: 0.5rem;
+        cursor: pointer;
+        transition: background 0.2s ease;
+        font-weight: 600;
+      }
+      .ai-send:hover {
+        background: var(--btn-primary-hover);
       }
       .sidebar-toggle {
         position: fixed;
@@ -244,6 +424,8 @@
         transition: margin-left 0.3s ease;
         height: 100vh;
         width: 100vw;
+        position: relative;
+        z-index: 1;
       }
       .landing-map-wrap.sidebar-visible {
         margin-left: 320px;
@@ -270,6 +452,10 @@
         box-shadow: 0 2px 8px rgba(0,0,0,0.15);
         width: 280px;
         transition: background 0.3s ease;
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        z-index: 999;
       }
       [data-theme="dark"] .header-search-box {
         background: #152235;
@@ -536,12 +722,8 @@
       <i class="fa-solid fa-bars"></i>
     </button>
 
-    <!-- Header with Search -->
+    <!-- Header with User Menu -->
     <div class="map-header">
-      <div class="header-search-box">
-        <i class="fa-solid fa-search"></i>
-        <input type="text" id="beach-search" placeholder="Search beaches..." aria-label="Search beaches" />
-      </div>
       <button class="user-menu-btn" onclick="toggleUserMenu()">
         <i class="fa-solid fa-user"></i>
       </button>

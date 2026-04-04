@@ -6,7 +6,7 @@
     <title>Explore Binongkalan</title>
     <script src="/theme.js"></script>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="/css/landing.css">
+    <link rel="stylesheet" href="/css/landing.css?v={{ time() }}">
     <link rel="icon" type="image/png" href="/storage/locations/logo.png">
   </head>
   <body>
