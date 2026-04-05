@@ -226,6 +226,6 @@
       window.existingLocations = {!! $locationsJson ?? '[]' !!};
     </script>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <script src="/admin-locations.js"></script>
+    <script src="/js/admin-locations.js"></script>
   </body>
 </html>

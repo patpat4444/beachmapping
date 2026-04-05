@@ -532,9 +532,9 @@
         console.log('Modal test ready. Run window.testModal() in console to test.');
       }, 3000);
     </script>
-    <script src="/theme.js"></script>
+    <script src="/js/theme.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <script src="/landing.js"></script>
+    <script src="/js/landing.js"></script>
   </body>
 </html>
