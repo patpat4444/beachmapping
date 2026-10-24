@@ -119,39 +119,31 @@ export async function POST(request: Request) {
           updated_at: new Date().toISOString(),
         });
         if (profileUpsertError) throw profileUpsertError;
-      } else if (authUser) {
-        // Update auth user password to match the PIN
-        const { error: passwordUpdateError } = await adminSupabase.auth.admin.updateUserById(
-          authUser.id,
-          { password: cleanPin }
-        );
-        if (passwordUpdateError) {
-          console.error('Failed to update auth user password:', passwordUpdateError);
-        }
       }
 
+      // *** VERIFY PIN FIRST before updating anything ***
       const storedPin = adminProfile.pin || '';
       const initialAdminPin = process.env.ADMIN_INITIAL_PIN;
-      
-      // Allow login if PIN matches stored hash, or if stored PIN is empty and matches initial PIN
-      if (storedPin !== pinHash && storedPin !== cleanPin) {
-        if (!storedPin && initialAdminPin && cleanPin === initialAdminPin) {
-          // Allow login if no PIN is set and the entered PIN matches the initial PIN
-        } else {
-          return NextResponse.json(
-            { error: 'Invalid 6-digit Admin PIN. Access denied.' },
-            { status: 401 }
-          );
-        }
+
+      // Check if stored PIN matches hash, or if it's plain text (legacy), or if empty and matches initial PIN
+      const pinMatchesHash = storedPin === pinHash;
+      const pinMatchesPlain = storedPin === cleanPin;
+      const pinMatchesInitial = !storedPin && initialAdminPin && cleanPin === initialAdminPin;
+
+      if (!pinMatchesHash && !pinMatchesPlain && !pinMatchesInitial) {
+        return NextResponse.json(
+          { error: 'Invalid 6-digit Admin PIN. Access denied.' },
+          { status: 401 }
+        );
       }
 
-      // Always update the PIN in database to ensure consistency
+      // PIN is verified — now sync the PIN hash and auth password
       const { error: pinUpdateError } = await (adminSupabase.from('profiles') as any)
         .update({ pin: pinHash, updated_at: new Date().toISOString() })
         .eq('id', adminProfile.id);
       if (pinUpdateError) throw pinUpdateError;
 
-      // Always update the password in Supabase auth
+      // Sync auth password to match the verified PIN
       const { error: passwordSyncError } = await adminSupabase.auth.admin.updateUserById(
         adminProfile.id,
         { email: adminEmail, email_confirm: true, password: cleanPin }
@@ -217,9 +209,20 @@ export async function POST(request: Request) {
         .select('id, email, full_name, role, pin')
         .eq('role', 'beach_owner')
         .ilike('email', ownerEmail)
-        .eq('pin', pinHash)
         .maybeSingle();
 
+      if (ownerProfile) {
+        // Verify PIN - check both hash and plain text for backwards compatibility
+        const storedPin = ownerProfile.pin || '';
+        const pinMatchesHash = storedPin === pinHash;
+        const pinMatchesPlain = storedPin === cleanPin;
+
+        if (!pinMatchesHash && !pinMatchesPlain) {
+          ownerProfile = null;
+        }
+      }
+
+      // If no match found yet, try to find and update legacy plain text PINs
       if (!ownerProfile) {
         const { data: legacyProfile } = await (adminSupabase.from('profiles') as any)
           .select('id, email, full_name, role, pin')
