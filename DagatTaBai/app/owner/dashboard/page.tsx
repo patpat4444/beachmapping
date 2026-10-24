@@ -26,6 +26,20 @@ interface ReviewAnalytics {
   recommendationRate: number;
 }
 
+function parseOpeningHoursForDisplay(openingHours: string | Record<string, string>): string {
+  if (typeof openingHours === 'string') {
+    return openingHours;
+  }
+  if (typeof openingHours === 'object' && openingHours !== null) {
+    const hours = Object.values(openingHours).filter(h => h && h !== 'CLOSE');
+    if (hours.length > 0) {
+      return String(hours[0]);
+    }
+    return 'Closed';
+  }
+  return 'Not set';
+}
+
 export default function OwnerDashboardPage() {
   const [beach, setBeach] = useState<BeachRecord | null>(null);
   const [reviews, setReviews] = useState<ReviewAnalytics | null>(null);
@@ -67,6 +81,29 @@ export default function OwnerDashboardPage() {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+      </div>
+    );
+  }
+
+  if (!beach) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[400px] text-center space-y-4">
+        <div className="w-16 h-16 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center">
+          <MapPin className="w-8 h-8 text-gray-400" />
+        </div>
+        <div>
+          <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-2">No Beach Found</h2>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
+            You haven't created your beach listing yet. Start by adding your beach information.
+          </p>
+          <Link
+            href="/owner/beach"
+            className="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors"
+          >
+            <Plus size={16} />
+            <span>Create Beach Listing</span>
+          </Link>
+        </div>
       </div>
     );
   }
@@ -170,7 +207,7 @@ export default function OwnerDashboardPage() {
               </div>
               <div className="flex items-center gap-2 text-sm">
                 <Clock size={16} className="text-gray-500" />
-                <span className="text-gray-900 dark:text-white">{beach?.opening_hours}</span>
+                <span className="text-gray-900 dark:text-white">{parseOpeningHoursForDisplay(beach?.opening_hours)}</span>
               </div>
               <div className="flex items-center gap-2 text-sm">
                 <Phone size={16} className="text-gray-500" />
@@ -206,7 +243,7 @@ export default function OwnerDashboardPage() {
             <div className="space-y-4">
               <div>
                 <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Opening Hours</p>
-                <p className="text-sm font-medium text-gray-900 dark:text-white">{beach?.opening_hours}</p>
+                <p className="text-sm font-medium text-gray-900 dark:text-white">{parseOpeningHoursForDisplay(beach?.opening_hours)}</p>
               </div>
 
               {beach?.entrance_fee && (

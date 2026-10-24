@@ -6,6 +6,8 @@ export interface BeachPhoto {
   photo_url: string;
   created_at?: string;
   likes?: number;
+  description?: string;
+  price?: string;
 }
 
 export interface BeachExternalLink {
@@ -27,8 +29,10 @@ export interface BeachRecord {
   virtual_tour_url: string | null;
   contact_phone: string | null;
   contact_email: string | null;
-  opening_hours: string;
+  opening_hours: string | Record<string, string>;
   entrance_fee: string | null;
+  entrance_fee_adults?: string | null;
+  entrance_fee_children?: string | null;
   cottage_fee: string | null;
   rules: string | null;
   status: 'active' | 'suspended';
@@ -60,32 +64,55 @@ export async function getAllBeaches(): Promise<BeachRecord[]> {
       .eq('status', 'active');
 
     if (!error && Array.isArray(dbBeaches)) {
-      return dbBeaches.map((b: any) => ({
-        id: b.id,
-        slug: b.slug || b.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, ''),
-        name: b.name,
-        description: b.description,
-        location: b.location,
-        latitude: Number(b.latitude),
-        longitude: Number(b.longitude),
-        cover_image: b.cover_image_url || b.cover_image || null,
-        profile_image: b.profile_image_url || b.profile_image || null,
-        images: Array.isArray(b.images) ? b.images : [],
-        virtual_tour_url: b.virtual_tour_url || null,
-        contact_phone: b.contact_phone || null,
-        contact_email: b.contact_email || null,
-        opening_hours: b.opening_hours || '8:00 AM - 6:00 PM',
-        entrance_fee: b.entrance_fee,
-        cottage_fee: b.cottage_fee,
-        rules: b.rules,
-        status: b.status,
-        average_rating: Number(b.average_rating || 0),
-        activities: b.beach_activities?.map((activity: any) => activity.name).filter(Boolean) || [],
-        amenities: b.beach_facilities?.map((facility: any) => facility.name).filter(Boolean) || [],
-        external_links: b.beach_external_links?.map((el: any) => ({ label: el.label, url: el.url })) || [],
-        created_at: b.created_at,
-        updated_at: b.updated_at,
-      }));
+      return dbBeaches.map((b: any) => {
+        // Parse opening_hours if it's a JSON string
+        let parsedOpeningHours = b.opening_hours || '8:00 AM - 6:00 PM';
+        if (typeof b.opening_hours === 'string' && b.opening_hours.startsWith('{')) {
+          try {
+            parsedOpeningHours = JSON.parse(b.opening_hours);
+          } catch {
+            parsedOpeningHours = b.opening_hours;
+          }
+        }
+
+        // Split entrance_fee into adults and children
+        let entranceFeeAdults = null;
+        let entranceFeeChildren = null;
+        if (b.entrance_fee && b.entrance_fee.includes('|')) {
+          const [adults, children] = b.entrance_fee.split('|');
+          entranceFeeAdults = adults;
+          entranceFeeChildren = children;
+        }
+
+        return {
+          id: b.id,
+          slug: b.slug || b.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, ''),
+          name: b.name,
+          description: b.description,
+          location: b.location,
+          latitude: Number(b.latitude),
+          longitude: Number(b.longitude),
+          cover_image: b.cover_image_url || b.cover_image || null,
+          profile_image: b.profile_image_url || b.profile_image || null,
+          images: Array.isArray(b.images) ? b.images : [],
+          virtual_tour_url: b.virtual_tour_url || null,
+          contact_phone: b.contact_phone || null,
+          contact_email: b.contact_email || null,
+          opening_hours: parsedOpeningHours,
+          entrance_fee: b.entrance_fee,
+          entrance_fee_adults: entranceFeeAdults,
+          entrance_fee_children: entranceFeeChildren,
+          cottage_fee: b.cottage_fee,
+          rules: b.rules,
+          status: b.status,
+          average_rating: Number(b.average_rating || 0),
+          activities: b.beach_activities?.map((activity: any) => activity.name).filter(Boolean) || [],
+          amenities: b.beach_facilities?.map((facility: any) => facility.name).filter(Boolean) || [],
+          external_links: b.beach_external_links?.map((el: any) => ({ label: el.label, url: el.url })) || [],
+          created_at: b.created_at,
+          updated_at: b.updated_at,
+        };
+      });
     }
   } catch (err) {
     // Database connection or table initialization fallback
@@ -116,6 +143,26 @@ export async function getBeachBySlug(slug: string): Promise<BeachRecord | null> 
 
     if (!error && dbBeach) {
       const b = dbBeach as any;
+
+      // Parse opening_hours if it's a JSON string
+      let parsedOpeningHours = b.opening_hours || '8:00 AM - 6:00 PM';
+      if (typeof b.opening_hours === 'string' && b.opening_hours.startsWith('{')) {
+        try {
+          parsedOpeningHours = JSON.parse(b.opening_hours);
+        } catch {
+          parsedOpeningHours = b.opening_hours;
+        }
+      }
+
+      // Split entrance_fee into adults and children
+      let entranceFeeAdults = null;
+      let entranceFeeChildren = null;
+      if (b.entrance_fee && b.entrance_fee.includes('|')) {
+        const [adults, children] = b.entrance_fee.split('|');
+        entranceFeeAdults = adults;
+        entranceFeeChildren = children;
+      }
+
       return {
         id: b.id,
         slug: b.slug || b.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, ''),
@@ -130,8 +177,10 @@ export async function getBeachBySlug(slug: string): Promise<BeachRecord | null> 
         virtual_tour_url: b.virtual_tour_url || null,
         contact_phone: b.contact_phone || null,
         contact_email: b.contact_email || null,
-        opening_hours: b.opening_hours || '8:00 AM - 6:00 PM',
+        opening_hours: parsedOpeningHours,
         entrance_fee: b.entrance_fee,
+        entrance_fee_adults: entranceFeeAdults,
+        entrance_fee_children: entranceFeeChildren,
         cottage_fee: b.cottage_fee,
         rules: b.rules,
         status: b.status,

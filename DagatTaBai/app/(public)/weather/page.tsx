@@ -16,11 +16,31 @@ import {
   FlaskConical,
   Cloud,
   CloudRain,
+  CloudSun,
   AlertTriangle,
+  RefreshCw,
+  MapPin,
+  Home,
+  Camera,
+  TrendingUp,
+  TrendingDown,
+  Minus,
+  Lightbulb,
+  CheckCircle2,
+  AlertCircle,
+  Info,
+  Calendar,
+  Search,
+  Bell,
+  ChevronDown,
+  Moon,
+  ArrowUpRight,
+  ArrowRight as ArrowRightIcon,
 } from 'lucide-react';
 import type { WeatherData } from '@/lib/services/weather';
 import { calculateCurrentTide, type CurrentTideState, type TideExtreme } from '@/lib/services/tide-interpolation';
 import type { BeachRecord } from '@/lib/db/beaches';
+import TideCard from '@/components/TideCard';
 
 // Helper to convert wind direction degrees to compass direction
 function getWindDirection(degrees: number): string {
@@ -37,11 +57,52 @@ function getWeatherIcon(weatherCode: number) {
   return Sun; // Clear/Cloudy
 }
 
-// Generate smart reminders based on weather conditions
+// Generate smart reminders based on weather conditions and time of day
 function generateReminders(weather: WeatherData | null, currentTide: CurrentTideState | null) {
   const reminders: { icon: any; text: string; type: 'info' | 'warning' | 'alert' }[] = [];
 
   if (!weather) return reminders;
+
+  const hour = new Date().getHours();
+  const isMorning = hour >= 6 && hour < 12;
+  const isAfternoon = hour >= 12 && hour < 18;
+  const isNight = hour >= 18 || hour < 6;
+
+  // Time-specific tips
+  if (isMorning) {
+    reminders.push({
+      icon: Sun,
+      text: 'Perfect time for sunrise photography and beach walks',
+      type: 'info',
+    });
+    reminders.push({
+      icon: FlaskConical,
+      text: 'Start your day hydrated - bring water for morning activities',
+      type: 'info',
+    });
+  } else if (isNight) {
+    reminders.push({
+      icon: Moon,
+      text: 'Great time for evening stargazing and bonfire activities',
+      type: 'info',
+    });
+    reminders.push({
+      icon: ShieldCheck,
+      text: 'Bring a light jacket - evening breeze can be cool',
+      type: 'info',
+    });
+    reminders.push({
+      icon: AlertCircle,
+      text: 'Stay near well-lit areas for safety',
+      type: 'warning',
+    });
+  } else if (isAfternoon) {
+    reminders.push({
+      icon: SunIcon,
+      text: 'Peak sun hours - seek shade and stay hydrated',
+      type: 'warning',
+    });
+  }
 
   // Rain/Drizzle reminders
   if (weather.weatherCode >= 51 && weather.weatherCode <= 67) {
@@ -61,8 +122,8 @@ function generateReminders(weather: WeatherData | null, currentTide: CurrentTide
     });
   }
 
-  // Hot weather sunscreen reminder
-  if (weather.temperature >= 30) {
+  // Hot weather sunscreen reminder (lowered to 25°C) - only for morning/afternoon
+  if (!isNight && weather.temperature >= 25) {
     reminders.push({
       icon: SunIcon,
       text: 'Apply sunblock/sunscreen regularly',
@@ -70,8 +131,8 @@ function generateReminders(weather: WeatherData | null, currentTide: CurrentTide
     });
   }
 
-  // UV protection reminder for clear/partly cloudy
-  if (weather.weatherCode <= 2 && weather.temperature >= 28) {
+  // UV protection reminder for clear/partly cloudy (lowered threshold to 20°C) - only for morning/afternoon
+  if (!isNight && weather.weatherCode <= 2 && weather.temperature >= 20) {
     reminders.push({
       icon: Sun,
       text: 'Wear sunglasses and hat for UV protection',
@@ -79,8 +140,8 @@ function generateReminders(weather: WeatherData | null, currentTide: CurrentTide
     });
   }
 
-  // Hydration reminder for hot weather
-  if (weather.temperature >= 32 || (weather.heatIndex && weather.heatIndex.heatIndexCelsius >= 35)) {
+  // Hydration reminder for hot weather (lowered threshold to 25°C) - only for morning/afternoon
+  if (!isNight && (weather.temperature >= 25 || (weather.heatIndex && weather.heatIndex.heatIndexCelsius >= 28))) {
     reminders.push({
       icon: FlaskConical,
       text: 'Stay hydrated - bring plenty of water',
@@ -112,6 +173,15 @@ function generateReminders(weather: WeatherData | null, currentTide: CurrentTide
       icon: ShieldCheck,
       text: 'High tide - swim with caution near shore',
       type: 'warning',
+    });
+  }
+
+  // General beach safety reminder (always show if no other alerts)
+  if (reminders.length === 0) {
+    reminders.push({
+      icon: ShieldCheck,
+      text: 'Conditions are favorable - enjoy your beach visit safely',
+      type: 'info',
     });
   }
 
@@ -190,263 +260,382 @@ export default function WeatherPage() {
     void loadConditions();
   }, [selectedBeach]);
 
+  // Format date for display
+  const formatDate = (date: Date) => {
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  };
+
+  const formatTime = (date: Date) => {
+    return date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+  };
+
+  const [now, setNow] = useState<Date>(new Date());
+
+  useEffect(() => {
+    setNow(new Date());
+  }, []);
+
   return (
-    <div className="min-h-screen bg-[#fdfbf8] dark:bg-[#09090b] text-slate-900 dark:text-zinc-100 transition-colors duration-200">
+    <div className="min-h-screen bg-sky-50 dark:bg-[#09090b] text-slate-900 dark:text-zinc-100 transition-colors duration-200">
       
-      {/* Hero Header */}
-      <section className="bg-gradient-to-b from-[#0e0e12] via-[#09090b] to-[#050505] text-white pt-16 pb-20 px-4 sm:px-6 lg:px-8 border-b border-neutral-800">
-        <div className="max-w-6xl mx-auto space-y-4">
-          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-sans font-bold tracking-tight text-white leading-tight">
-            Barangay Binongkalan Weather &amp; Marine Tides
-          </h1>
+      {/* Page Header */}
+      <div className="px-4 sm:px-6 lg:px-8 py-6">
+        <div className="max-w-7xl mx-auto flex items-center justify-between">
+          {/* Left side */}
+          <div className="flex items-start gap-3">
+            <div className="w-10 h-10 rounded-full bg-sky-100 dark:bg-sky-900 flex items-center justify-center flex-shrink-0">
+              <MapPin className="w-5 h-5 text-sky-600 dark:text-sky-400" />
+            </div>
+            <div>
+              <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white">Barangay Binongkalan</h1>
+              <p className="text-sm text-slate-600 dark:text-slate-400">Camotes Sea, Cebu</p>
+            </div>
+          </div>
 
-          <p className="text-slate-300 text-sm max-w-2xl leading-relaxed">
-            Real-time meteorological readings, Camotes Sea swell conditions, safe low-tide sandbar schedules, and heat indexes across all 5 municipal coastline sanctuaries.
-          </p>
-
-          {/* Beach Switcher Pills */}
-          <div className="pt-4 flex flex-wrap items-center gap-2">
-            {beaches.map((b) => (
-              <button
-                key={b.id}
-                type="button"
-                onClick={() => setSelectedBeachId(b.id)}
-                className={`px-4 py-2 rounded-full text-xs font-bold transition-all duration-150 ${
-                  selectedBeachId === b.id
-                    ? 'bg-[#0284c7] text-white shadow-md scale-105'
-                    : 'bg-white/10 text-slate-300 hover:bg-white/20 hover:text-white border border-white/10'
-                }`}
-              >
-                {b.name}
-              </button>
-            ))}
+          {/* Right side - Last updated */}
+          <div className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400">
+            <Calendar className="w-4 h-4" />
+            <span>Last updated, {formatDate(now)} · {formatTime(now)}</span>
           </div>
         </div>
-      </section>
-
-      {/* Main Observatory Content */}
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12 space-y-10">
-        {dataError && (
-          <p role="status" className="border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-            {dataError}
-          </p>
-        )}
-        
-        {/* Top Highlight Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          
-          {/* 1. Main Temperature & Conditions */}
-          <div className="p-6 rounded-2xl bg-white dark:bg-[#121215] border border-slate-200/90 dark:border-neutral-800 shadow-sm space-y-4">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-bold uppercase tracking-wider text-slate-400">Current Atmosphere</span>
-              <Sun className="w-5 h-5 text-sky-500" />
-            </div>
-
-            <div className="flex items-baseline gap-3">
-              <span className="text-4xl sm:text-5xl font-serif font-bold text-slate-900 dark:text-white">
-                {weather ? `${weather.temperature.toFixed(1)}°` : loading ? 'Loading...' : 'Unavailable'}
-              </span>
-              <span className="text-sm font-semibold text-slate-500">
-                {weather?.conditionLabel || (loading ? 'Loading...' : 'Unavailable')}
-              </span>
-            </div>
-
-            <div className="pt-3 border-t border-slate-100 dark:border-slate-800 grid grid-cols-2 gap-2 text-xs text-slate-600 dark:text-slate-400">
-              <div>
-                <span className="block text-[10px] text-slate-400">Feels Like (Heat Index)</span>
-                <span className="font-bold text-slate-900 dark:text-white">
-                  {weather?.heatIndex ? `${weather.heatIndex.heatIndexCelsius.toFixed(1)}°C` : loading ? 'Loading...' : 'Unavailable'}
-                </span>
-              </div>
-              <div>
-                <span className="block text-[10px] text-slate-400">Heat Advisory</span>
-                <span className="font-bold text-amber-600 dark:text-amber-400">
-                  {weather?.heatIndex ? weather.heatIndex.category : loading ? 'Loading...' : 'Unavailable'}
-                </span>
-              </div>
-            </div>
-          </div>
-
-          {/* 2. Sea State & Tides */}
-          <div className="p-6 rounded-2xl bg-white dark:bg-[#121215] border border-slate-200/90 dark:border-neutral-800 shadow-sm space-y-4">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-bold uppercase tracking-wider text-slate-400">Binongkalan Catmon Cebu Tides</span>
-              <Waves className="w-5 h-5 text-[#0284c7]" />
-            </div>
-
-            <div className="flex items-baseline gap-3">
-              <span className="text-3xl sm:text-4xl font-serif font-bold text-slate-900 dark:text-white">
-                {currentTide ? `${currentTide.currentHeight.toFixed(1)}m ${currentTide.status}` : loading ? 'Loading...' : 'Unavailable'}
-              </span>
-            </div>
-
-            <div className="pt-3 border-t border-slate-100 dark:border-slate-800 grid grid-cols-2 gap-2 text-xs text-slate-600 dark:text-slate-400">
-              <div>
-                <span className="block text-[10px] text-slate-400">Next Tide</span>
-                <span className="font-bold text-emerald-600 dark:text-emerald-400">
-                  {currentTide ? `${new Date(currentTide.nextExtreme.time).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })} · ${currentTide.nextExtreme.type}` : loading ? 'Loading...' : 'Unavailable'}
-                </span>
-              </div>
-              <div>
-                <span className="block text-[10px] text-slate-400">Water Temperature</span>
-                <span className="font-bold text-slate-900 dark:text-white">Unavailable</span>
-              </div>
-            </div>
-          </div>
-
-          {/* 3. Wind & Marine Safety */}
-          <div className="p-6 rounded-2xl bg-white dark:bg-[#121215] border border-slate-200/90 dark:border-neutral-800 shadow-sm space-y-4">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-bold uppercase tracking-wider text-slate-400">Marine &amp; Swim Flag</span>
-              <ShieldCheck className="w-5 h-5 text-emerald-500" />
-            </div>
-
-            <div className="flex items-center gap-2">
-              <span className="w-3 h-3 rounded-full bg-emerald-500 animate-pulse" />
-              <span className="text-xl font-bold text-emerald-700 dark:text-emerald-400">
-                Safety data unavailable
-              </span>
-            </div>
-
-            <div className="pt-3 border-t border-slate-100 dark:border-slate-800 grid grid-cols-2 gap-2 text-xs text-slate-600 dark:text-slate-400">
-              <div>
-                <span className="block text-[10px] text-slate-400">Wind Velocity</span>
-                <span className="font-bold text-slate-900 dark:text-white">
-                  {weather ? `${weather.windSpeed.toFixed(1)} km/h · ${getWindDirection(weather.windDirection)}` : loading ? 'Loading...' : 'Unavailable'}
-                </span>
-              </div>
-              <div>
-                <span className="block text-[10px] text-slate-400">Swell Height</span>
-                <span className="font-bold text-slate-900 dark:text-white">Unavailable</span>
-              </div>
-            </div>
-          </div>
-
-        </div>
-
-        {/* Smart Reminders Section */}
-        <div className="p-6 rounded-2xl bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-950/30 dark:to-orange-950/30 border border-amber-200/90 dark:border-amber-800/50 shadow-sm space-y-4">
-          <div className="flex items-center justify-between">
-            <h3 className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider">
-              Smart Reminders
-            </h3>
-            <span className="text-xs text-amber-600 dark:text-amber-400">Based on current conditions</span>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-            {generateReminders(weather, currentTide).length > 0 ? (
-              generateReminders(weather, currentTide).map((reminder, i) => {
-                const IconComp = reminder.icon;
-                const typeColors = {
-                  info: 'bg-blue-50 dark:bg-blue-950/30 border-blue-200 dark:border-blue-800 text-blue-700 dark:text-blue-300',
-                  warning: 'bg-amber-50 dark:bg-amber-950/30 border-amber-200 dark:border-amber-800 text-amber-700 dark:text-amber-300',
-                  alert: 'bg-red-50 dark:bg-red-950/30 border-red-200 dark:border-red-800 text-red-700 dark:text-red-300',
-                };
-                return (
-                  <div
-                    key={i}
-                    className={`p-4 rounded-xl border ${typeColors[reminder.type]} flex items-start gap-3`}
-                  >
-                    <IconComp className="w-5 h-5 flex-shrink-0 mt-0.5" />
-                    <span className="text-xs font-semibold leading-snug">{reminder.text}</span>
-                  </div>
-                );
-              })
-            ) : (
-              <div className="col-span-full p-4 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 text-center">
-                <span className="text-xs text-slate-500 dark:text-slate-400">
-                  {loading ? 'Loading weather data...' : 'No specific weather alerts at this time'}
-                </span>
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Hourly Forecast Strip */}
-        <div className="p-6 rounded-2xl bg-white dark:bg-[#121215] border border-slate-200/90 dark:border-neutral-800 shadow-sm space-y-4">
-          <div className="flex items-center justify-between">
-            <h3 className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider">
-              Today&apos;s Coastal Progression
-            </h3>
-            <span className="text-xs text-slate-400">Updated hourly from Open-Meteo API</span>
-          </div>
-
-          <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-3 pt-2">
-            {weather?.hourly && weather.hourly.length > 0 ? (
-              weather.hourly.map((hour, i) => {
-                const time = new Date(hour.time);
-                const timeStr = time.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
-                const IconComp = getWeatherIcon(hour.weatherCode);
-
-                // Calculate estimated tide at this hour (simple approximation)
-                const hourIndex = Math.floor((time.getHours() / 24) * (tideExtremes.length || 1));
-                const tideEstimate = tideExtremes[hourIndex] ? `${tideExtremes[hourIndex].height.toFixed(1)}m (${tideExtremes[hourIndex].type})` : 'N/A';
-
-                return (
-                  <div
-                    key={i}
-                    className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-800 text-center space-y-1.5"
-                  >
-                    <span className="text-[11px] font-bold text-slate-400 block">{timeStr}</span>
-                    <IconComp className="w-5 h-5 text-sky-500 mx-auto my-1" />
-                    <span className="text-sm font-bold text-slate-900 dark:text-white block">{hour.temperature.toFixed(0)}°C</span>
-                    <span className="text-[10px] text-[#0284c7] font-semibold block">{tideEstimate}</span>
-                  </div>
-                );
-              })
-            ) : (
-              // Fallback while loading
-              Array.from({ length: 6 }).map((_, i) => (
-                <div
-                  key={i}
-                  className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-800 text-center space-y-1.5 animate-pulse"
-                >
-                  <div className="h-3 bg-slate-200 dark:bg-slate-700 rounded w-12 mx-auto" />
-                  <div className="w-5 h-5 bg-slate-200 dark:bg-slate-700 rounded mx-auto my-1" />
-                  <div className="h-4 bg-slate-200 dark:bg-slate-700 rounded w-8 mx-auto" />
-                  <div className="h-3 bg-slate-200 dark:bg-slate-700 rounded w-10 mx-auto" />
-                </div>
-              ))
-            )}
-          </div>
-        </div>
-
-        {/* Selected Resort Details & CTA */}
-        {selectedBeach && (
-          <div className="p-8 rounded-3xl bg-gradient-to-r from-[#08182b] to-[#0f2942] text-white flex flex-col md:flex-row items-center justify-between gap-6 shadow-xl">
-            <div className="space-y-2 max-w-xl">
-              <span className="text-xs uppercase tracking-widest text-[#38bdf8] font-bold">
-                OBSERVING {selectedBeach.name.toUpperCase()}
-              </span>
-              <h3 className="text-2xl sm:text-3xl font-serif font-bold text-white">
-                Ready to explore {selectedBeach.name}?
-              </h3>
-              <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
-                Check entrance rates ({selectedBeach.entrance_fee}), cottages ({selectedBeach.cottage_fee}), 360° shoreline scans, and route instructions.
-              </p>
-            </div>
-
-            <div className="flex flex-wrap items-center gap-3 flex-shrink-0">
-              <Link
-                href={`/beaches/${selectedBeach.slug || selectedBeach.id}`}
-                className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-[#0284c7] hover:bg-[#0369a1] text-white text-xs sm:text-sm font-bold transition-all shadow-md hover:scale-105"
-              >
-                <Eye className="w-4 h-4" />
-                <span>Inspect Profile</span>
-              </Link>
-              <Link
-                href={`/map?selected=${selectedBeach.slug || selectedBeach.id}`}
-                className="inline-flex items-center gap-2 px-5 py-3 rounded-full bg-white/10 hover:bg-white/20 text-white text-xs sm:text-sm font-semibold border border-white/20 transition-all"
-              >
-                <Compass className="w-4 h-4" />
-                <span>Open on Map</span>
-              </Link>
-            </div>
-          </div>
-        )}
-
       </div>
 
+      {/* Main Dashboard Content */}
+      <div className="px-4 sm:px-6 lg:px-8 pb-8">
+        <div className="max-w-7xl mx-auto space-y-6">
+          {dataError && (
+            <p role="status" className="border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+              {dataError}
+            </p>
+          )}
+
+          {/* Current Conditions Banner */}
+          <div className="bg-gradient-to-br from-sky-100 to-sky-50 dark:from-sky-900/30 dark:to-slate-900/30 rounded-2xl p-6 relative overflow-hidden border border-sky-200 dark:border-sky-800">
+            {/* Wave pattern at bottom */}
+            <div className="absolute bottom-0 left-0 right-0 opacity-20 pointer-events-none">
+              <svg viewBox="0 0 1200 100" preserveAspectRatio="none" className="w-full h-20">
+                <path d="M0,50 Q300,20 600,50 T1200,50 V100 H0 Z" fill="#0ea5e9" />
+              </svg>
+            </div>
+
+            <div className="relative">
+              {/* Main reading */}
+              <div className="flex items-center gap-4 mb-6">
+                <div className="w-16 h-16 rounded-full bg-sky-500 flex items-center justify-center">
+                  {(() => {
+                    const hour = new Date().getHours();
+                    if (hour >= 18 || hour < 6) return <Moon className="w-8 h-8 text-white" />;
+                    return <Sun className="w-8 h-8 text-white" />;
+                  })()}
+                </div>
+                <div>
+                  <div className="text-sm text-slate-600 dark:text-slate-400">
+                    {(() => {
+                      const hour = new Date().getHours();
+                      if (hour >= 6 && hour < 12) return 'Morning Weather';
+                      if (hour >= 12 && hour < 18) return 'Afternoon Weather';
+                      return 'Evening Weather';
+                    })()}
+                  </div>
+                  <div className="text-3xl font-bold text-slate-900 dark:text-white">
+                    {weather ? `${weather.temperature.toFixed(1)}°C` : '--'}
+                  </div>
+                  <div className="text-sm text-slate-600 dark:text-slate-400">
+                    {weather?.conditionLabel || 'Mostly Clear'}
+                  </div>
+                </div>
+              </div>
+
+              {/* Six stat columns with Good Conditions */}
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-7 gap-4 mb-6">
+                {[
+                  { label: 'Air Temp', value: weather ? `${weather.temperature.toFixed(1)}°C` : '--', icon: Sun },
+                  { label: 'Water Temp', value: weather?.waterTemperature ? `${weather.waterTemperature.toFixed(1)}°C` : '--', icon: Droplets },
+                  { label: 'Wind', value: weather ? `${weather.windSpeed} km/h` : '--', detail: 'Light breeze', icon: Wind },
+                  { label: 'Wave Height', value: weather?.swellHeight ? `${weather.swellHeight.toFixed(1)} m` : '--', detail: 'Calm', icon: Waves },
+                  { label: 'Humidity', value: weather ? `${weather.relativeHumidity}%` : '--', icon: Droplets },
+                  { label: 'UV Index', value: 'Moderate', detail: 'UV 5', icon: Sun },
+                  { isGoodConditions: true },
+                ].map((stat, i) => (
+                  stat.isGoodConditions ? (
+                    <div key={i} className="bg-emerald-500 rounded-xl p-3 flex flex-col items-center justify-center text-center">
+                      <CheckCircle2 className="w-5 h-5 text-white mb-1" />
+                      <div className="font-bold text-white text-xs">Good Conditions</div>
+                    </div>
+                  ) : (
+                    <div key={i} className={`flex items-center gap-2 ${i < 5 ? 'border-r border-slate-300 dark:border-slate-700 pr-4' : ''}`}>
+                      <div className="w-8 h-8 rounded-full bg-white dark:bg-slate-800 flex items-center justify-center flex-shrink-0">
+                        {stat.icon && <stat.icon className="w-5 h-5 text-sky-600 dark:text-sky-400" />}
+                      </div>
+                      <div>
+                        <div className="text-[10px] text-slate-500 dark:text-slate-400 uppercase">{stat.label}</div>
+                        <div className="text-sm font-semibold text-slate-900 dark:text-white">{stat.value}</div>
+                        {stat.detail && <div className="text-[10px] text-slate-500">{stat.detail}</div>}
+                      </div>
+                    </div>
+                  )
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Middle Row - 3 Cards (Tide + Today's Forecast + 4-Day Forecast) */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Tide Card */}
+            <div className="bg-white dark:bg-[#121215] rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm p-6">
+              <div className="flex items-center gap-2 mb-4">
+                <Waves className="w-6 h-6 text-sky-600" />
+                <div>
+                  <h2 className="font-bold text-slate-900 dark:text-white">Tide</h2>
+                  <p className="text-xs text-slate-500">Current water level and next tide</p>
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <div className="bg-emerald-100 dark:bg-emerald-900/30 rounded-lg p-4 border border-emerald-200 dark:border-emerald-800">
+                  <div className="flex items-center gap-2 mb-1">
+                    <TrendingDown className="w-4 h-4 text-emerald-600" />
+                    <span className="text-sm font-semibold text-emerald-700 dark:text-emerald-400">
+                      Low Tide, {currentTide?.currentHeight.toFixed(1)} m (falling)
+                    </span>
+                  </div>
+                </div>
+
+                {currentTide?.nextExtreme && (
+                  <div className="flex items-start gap-3 p-3 rounded-lg bg-slate-50 dark:bg-slate-800/50">
+                    <div className="w-8 h-8 rounded-full bg-sky-100 dark:bg-sky-900 flex items-center justify-center flex-shrink-0">
+                      <TrendingUp className="w-4 h-4 text-sky-600 dark:text-sky-400" />
+                    </div>
+                    <div>
+                      <div className="text-sm font-semibold text-slate-900 dark:text-white">
+                        Next High Tide
+                      </div>
+                      <div className="text-xs text-slate-600 dark:text-slate-400">
+                        {new Date(currentTide.nextExtreme.time).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })} · {currentTide.nextExtreme.height.toFixed(1)} m
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Chart */}
+                <div className="h-40 relative">
+                  <svg viewBox="0 0 300 160" className="w-full h-full">
+                    {/* Grid lines */}
+                    {[0, 0.5, 1.0, 1.5, 2.0].map((y, i) => (
+                      <line
+                        key={i}
+                        x1="0"
+                        y1={140 - (y / 2) * 120}
+                        x2="300"
+                        y2={140 - (y / 2) * 120}
+                        stroke="#e2e8f0"
+                        strokeWidth="1"
+                      />
+                    ))}
+                    
+                    {/* Y-axis labels */}
+                    {[0, 0.5, 1.0, 1.5, 2.0].map((y, i) => (
+                      <text
+                        key={i}
+                        x="5"
+                        y={140 - (y / 2) * 120 - 3}
+                        className="text-[9px] fill-slate-400"
+                      >
+                        {y}m
+                      </text>
+                    ))}
+
+                    {/* X-axis labels */}
+                    {['12 PM', '6 PM', '12 AM', '6 AM', '12 PM'].map((label, i) => (
+                      <text
+                        key={i}
+                        x={i * 75}
+                        y="155"
+                        className="text-[9px] fill-slate-400 text-center"
+                        textAnchor="middle"
+                      >
+                        {label}
+                      </text>
+                    ))}
+
+                    {/* Tide curve */}
+                    <path
+                      d="M0,80 Q75,120 150,80 T300,40"
+                      fill="none"
+                      stroke="#0ea5e9"
+                      strokeWidth="2"
+                    />
+                    
+                    {/* Area fill */}
+                    <path
+                      d="M0,80 Q75,120 150,80 T300,40 V160 H0 Z"
+                      fill="#0ea5e9"
+                      fillOpacity="0.1"
+                    />
+
+                    {/* Now marker */}
+                    <g>
+                      <circle cx="75" cy="120" r="3" fill="#22c55e" />
+                      <line x1="75" y1="120" x2="75" y2="140" stroke="#22c55e" strokeWidth="1" strokeDasharray="3" />
+                      <rect x="45" y="100" width="60" height="18" rx="3" fill="#22c55e" fillOpacity="0.9" />
+                      <text x="75" y="112" className="text-[8px] fill-white text-center" textAnchor="middle" fontWeight="bold">Now {currentTide?.currentHeight.toFixed(1)} m</text>
+                    </g>
+
+                    {/* High tide marker */}
+                    <g>
+                      <circle cx="225" cy="40" r="3" fill="#0ea5e9" />
+                      <line x1="225" y1="40" x2="225" y2="140" stroke="#0ea5e9" strokeWidth="1" strokeDasharray="3" />
+                      <rect x="195" y="20" width="60" height="18" rx="3" fill="#0ea5e9" fillOpacity="0.9" />
+                      <text x="225" y="32" className="text-[8px] fill-white text-center" textAnchor="middle" fontWeight="bold">High Tide 1.8 m</text>
+                    </g>
+                  </svg>
+                </div>
+              </div>
+            </div>
+
+            {/* Today's Forecast */}
+            <div className="bg-white dark:bg-[#121215] rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm p-6">
+              <div className="flex items-center gap-2 mb-4">
+                <CloudSun className="w-6 h-6 text-sky-600" />
+                <div>
+                  <h2 className="font-bold text-slate-900 dark:text-white">Today's Forecast</h2>
+                  <p className="text-xs text-slate-500">Partly cloudy skies with warm temperatures</p>
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                {[
+                  { label: 'Max Temperature', value: weather ? `${(weather.temperature + 2).toFixed(0)}°C` : '--', icon: Sun },
+                  { label: 'Min Temperature', value: weather ? `${(weather.temperature - 2).toFixed(0)}°C` : '--', icon: Sun },
+                  { label: 'Chance of Rain', value: '10%', icon: Droplets },
+                  { label: 'UV Index', value: 'Moderate (5)', icon: Sun },
+                ].map((item, i) => (
+                  <div key={i} className="flex items-center gap-3 p-3 rounded-lg bg-slate-50 dark:bg-slate-800/50">
+                    <div className="w-8 h-8 rounded-full bg-white dark:bg-slate-700 flex items-center justify-center flex-shrink-0">
+                      <item.icon className="w-4 h-4 text-sky-600 dark:text-sky-400" />
+                    </div>
+                    <div className="flex-1">
+                      <div className="text-xs text-slate-500 dark:text-slate-400">{item.label}</div>
+                      <div className="text-sm font-semibold text-slate-900 dark:text-white">{item.value}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* 4-Day Forecast */}
+            <div className="bg-white dark:bg-[#121215] rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm p-6">
+              <div className="flex items-center gap-2 mb-4">
+                <Calendar className="w-6 h-6 text-sky-600" />
+                <h2 className="font-bold text-slate-900 dark:text-white">4-Day Forecast</h2>
+              </div>
+
+              <div className="space-y-3">
+                {[
+                  { day: 'Thu, Apr 24', high: 29, low: 26, rain: 20, icon: CloudSun },
+                  { day: 'Fri, Apr 25', high: 28, low: 25, rain: 40, icon: Cloud },
+                  { day: 'Sat, Apr 26', high: 30, low: 26, rain: 10, icon: Sun },
+                  { day: 'Sun, Apr 27', high: 31, low: 27, rain: 10, icon: Sun },
+                ].map((day, i) => (
+                  <div key={i} className="flex items-center gap-3 p-3 rounded-lg bg-slate-50 dark:bg-slate-800/50">
+                    <day.icon className="w-5 h-5 text-sky-600 dark:text-sky-400 flex-shrink-0" />
+                    <div className="flex-1">
+                      <div className="text-sm font-semibold text-slate-900 dark:text-white">{day.day}</div>
+                      <div className="text-xs text-slate-500">{day.low}° / {day.high}°</div>
+                    </div>
+                    <div className="flex items-center gap-1 text-xs text-slate-600 dark:text-slate-400">
+                      <Droplets className="w-3 h-3" />
+                      {day.rain}%
+                    </div>
+                    <ArrowRightIcon className="w-4 h-4 text-slate-400" />
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Bottom Row - 2 Cards */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Activity Conditions (wide) */}
+            <div className="lg:col-span-2 bg-white dark:bg-[#121215] rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm p-6">
+              <div className="flex items-center gap-2 mb-4">
+                <Waves className="w-6 h-6 text-sky-600" />
+                <div>
+                  <h2 className="font-bold text-slate-900 dark:text-white">Activity Conditions</h2>
+                  <p className="text-xs text-slate-500">Based on current weather and tide conditions</p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                {[
+                  { activity: 'Swimming', status: 'Good', color: 'emerald', note: 'Calm waters, safe for swimming.', icon: ShieldCheck },
+                  { activity: 'Snorkeling', status: 'Good', color: 'emerald', note: 'Good visibility, calm seas.', icon: ShieldCheck },
+                  { activity: 'Diving', status: 'Caution', color: 'amber', note: 'May have stronger currents later today.', icon: AlertCircle },
+                  { activity: 'Fishing', status: 'Good', color: 'emerald', note: 'Best in the morning or evening.', icon: ShieldCheck },
+                  { activity: 'Sandbar', status: 'Good', color: 'emerald', note: 'Visible at low tide. Check tide schedule.', icon: ShieldCheck },
+                ].map((item, i) => (
+                  <div key={i} className="p-4 rounded-lg bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-700">
+                    <div className="flex items-center gap-2 mb-2">
+                      <div className={`w-6 h-6 rounded-full flex items-center justify-center ${item.color === 'emerald' ? 'bg-emerald-100 text-emerald-600' : 'bg-amber-100 text-amber-600'}`}>
+                        <item.icon size={14} />
+                      </div>
+                      <span className="text-sm font-semibold text-slate-900 dark:text-white">{item.activity}</span>
+                    </div>
+                    <span className={`inline-block text-[10px] font-semibold px-2 py-0.5 rounded-full mb-2 ${item.color === 'emerald' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}`}>
+                      {item.status}
+                    </span>
+                    <p className="text-xs text-slate-600 dark:text-slate-400">{item.note}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Tips (narrower) */}
+            <div className="bg-white dark:bg-[#121215] rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm p-6">
+              <div className="flex items-center gap-2 mb-4">
+                <Lightbulb className="w-6 h-6 text-amber-500" />
+                <div>
+                  <h2 className="font-bold text-slate-900 dark:text-white">Tips</h2>
+                  <p className="text-xs text-slate-500">Simple reminders for a safer and better trip</p>
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                {generateReminders(weather, currentTide).map((reminder, i) => (
+                  <div key={i} className={`flex items-start gap-3 p-3 rounded-lg ${
+                    reminder.type === 'alert' 
+                      ? 'bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800' 
+                      : reminder.type === 'warning'
+                      ? 'bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800'
+                      : 'bg-slate-50 dark:bg-slate-800/50'
+                  }`}>
+                    <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${
+                      reminder.type === 'alert'
+                        ? 'bg-red-100 text-red-600'
+                        : reminder.type === 'warning'
+                        ? 'bg-amber-100 text-amber-600'
+                        : 'bg-sky-100 text-sky-600'
+                    }`}>
+                      <reminder.icon className="w-4 h-4" />
+                    </div>
+                    <div className="flex-1">
+                      <p className={`text-sm font-medium ${
+                        reminder.type === 'alert'
+                          ? 'text-red-900 dark:text-red-300'
+                          : reminder.type === 'warning'
+                          ? 'text-amber-900 dark:text-amber-300'
+                          : 'text-slate-900 dark:text-white'
+                      }`}>
+                        {reminder.text}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

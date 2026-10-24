@@ -5,7 +5,7 @@ export interface RouteResult {
   distanceKm: number;
   durationMinutes: number;
   durationFormatted: string;
-  travelMode: 'Car' | 'Motorcycle';
+  travelMode: 'Car' | 'Motorcycle' | 'Walking';
   durationIsEstimated: boolean;
   provider: 'OSRM OpenStreetMap Driving Engine' | 'Geodesic Calculation';
 }
@@ -13,13 +13,16 @@ export interface RouteResult {
 /**
  * Calculates a verified road route using the Open Source Routing Machine (OSRM) driving API.
  * Uses real geographic coordinates for origin and destination.
+ * Note: OSRM doesn't have a motorcycle or walking profile, so we use 'driving' for car/motorcycle and 'foot' for walking, then adjust speed calculations.
  */
 export async function calculateRoadRoute(
   origin: { lat: number; lng: number },
   destination: { lat: number; lng: number },
-  travelMode: 'car' | 'motorcycle' = 'car'
+  travelMode: 'car' | 'motorcycle' | 'walking' = 'car'
 ): Promise<RouteResult> {
-  const url = `https://router.project-osrm.org/route/v1/driving/${origin.lng},${origin.lat};${destination.lng},${destination.lat}?overview=full&geometries=geojson`;
+  // Use 'foot' profile for walking, 'driving' for car/motorcycle
+  const profile = travelMode === 'walking' ? 'foot' : 'driving';
+  const url = `https://router.project-osrm.org/route/v1/${profile}/${origin.lng},${origin.lat};${destination.lng},${destination.lat}?overview=full&geometries=geojson`;
 
   try {
     const res = await fetch(url, {
@@ -33,9 +36,13 @@ export async function calculateRoadRoute(
       if (data.code === 'Ok' && data.routes && data.routes.length > 0) {
         const route = data.routes[0];
         const distanceKm = Number((route.distance / 1000).toFixed(2));
-        const durationIsEstimated = travelMode === 'motorcycle';
+        
+        // Calculate duration based on travel mode
+        // Car: use OSRM duration, Motorcycle/Walking: estimate based on distance
+        const durationIsEstimated = travelMode === 'motorcycle' || travelMode === 'walking';
+        const averageSpeedKmh = travelMode === 'car' ? 40 : travelMode === 'motorcycle' ? 35 : 5; // Walking ~5 km/h
         const totalMinutes = durationIsEstimated
-          ? Math.max(1, Math.round((distanceKm / 32) * 60))
+          ? Math.max(1, Math.round((distanceKm / averageSpeedKmh) * 60))
           : Math.max(1, Math.round(route.duration / 60));
 
         let durationFormatted = '';
@@ -57,7 +64,7 @@ export async function calculateRoadRoute(
           distanceKm,
           durationMinutes: totalMinutes,
           durationFormatted,
-          travelMode: travelMode === 'car' ? 'Car' : 'Motorcycle',
+          travelMode: travelMode === 'car' ? 'Car' : travelMode === 'motorcycle' ? 'Motorcycle' : 'Walking',
           durationIsEstimated,
           provider: 'OSRM OpenStreetMap Driving Engine',
         };
@@ -74,7 +81,7 @@ export async function calculateRoadRoute(
     destination.lat,
     destination.lng
   );
-  const averageSpeedKmh = travelMode === 'car' ? 40 : 32;
+  const averageSpeedKmh = travelMode === 'car' ? 40 : travelMode === 'motorcycle' ? 35 : 5;
   const estMins = Math.max(2, Math.round((straightDist / averageSpeedKmh) * 60));
   const durationFormatted =
     estMins >= 60
@@ -89,7 +96,7 @@ export async function calculateRoadRoute(
     distanceKm: straightDist,
     durationMinutes: estMins,
     durationFormatted,
-    travelMode: travelMode === 'car' ? 'Car' : 'Motorcycle',
+    travelMode: travelMode === 'car' ? 'Car' : travelMode === 'motorcycle' ? 'Motorcycle' : 'Walking',
     durationIsEstimated: true,
     provider: 'Geodesic Calculation',
   };

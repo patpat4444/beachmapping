@@ -94,6 +94,18 @@ export function AiChatWidget() {
     setInput('');
     setLoading(true);
 
+    // Create placeholder for streaming response
+    const assistantMsgId = (Date.now() + 1).toString();
+    setMessages((prev) => [
+      ...prev,
+      {
+        id: assistantMsgId,
+        sender: 'assistant',
+        text: '',
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      },
+    ]);
+
     try {
       const res = await fetch('/api/assistant', {
         method: 'POST',
@@ -103,25 +115,44 @@ export function AiChatWidget() {
         }),
       });
 
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Assistant request failed.');
-      const assistantReply: ChatMessage = {
-        id: (Date.now() + 1).toString(),
-        sender: 'assistant',
-        text: data.reply || "I'm sorry, I couldn't process that right now. Please try again.",
-        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      };
-      setMessages((prev) => [...prev, assistantReply]);
+      if (!res.ok) {
+        const errorText = await res.text();
+        throw new Error(errorText || 'Assistant request failed.');
+      }
+
+      // Handle streaming response
+      const reader = res.body?.getReader();
+      const decoder = new TextDecoder();
+      let accumulatedText = '';
+
+      if (reader) {
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+
+          const chunk = decoder.decode(value, { stream: true });
+          accumulatedText += chunk;
+
+          setMessages((prev) =>
+            prev.map((msg) =>
+              msg.id === assistantMsgId
+                ? { ...msg, text: accumulatedText }
+                : msg
+            )
+          );
+        }
+      }
     } catch {
-      setMessages((prev) => [
-        ...prev,
-        {
-          id: (Date.now() + 1).toString(),
-          sender: 'assistant',
-          text: "I'm currently unable to connect to the assistant service. Please check your internet connection.",
-          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        },
-      ]);
+      setMessages((prev) =>
+        prev.map((msg) =>
+          msg.id === assistantMsgId
+            ? {
+                ...msg,
+                text: "I'm currently unable to connect to the assistant service. Please check your internet connection.",
+              }
+            : msg
+        )
+      );
     } finally {
       setLoading(false);
     }

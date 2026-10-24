@@ -23,31 +23,17 @@ export async function GET() {
     if (auth.response) return auth.response;
 
     const { data: authData, error: usersError } = await auth.adminClient!.auth.admin.listUsers({ page: 1, perPage: 1000 });
-    if (usersError) throw usersError;
-    const authUsers = authData.users;
-    const ids = authUsers.map((user) => user.id);
-    const { data: profiles, error: profilesError } = ids.length
-      ? await (auth.adminClient!.from('profiles') as any).select('id, full_name, email, role').in('id', ids)
-      : { data: [], error: null };
-    if (profilesError) throw profilesError;
-
-    const profileById = new Map((profiles || []).map((profile: any) => [profile.id, profile]));
-    const users = authUsers.map((user) => {
-      const profile = profileById.get(user.id) as any;
-      return {
-        id: user.id,
-        name: profile?.full_name || user.user_metadata?.full_name || user.email?.split('@')[0] || 'User',
-        email: profile?.email || user.email || '',
-        role: profile?.role || 'user',
-        status: user.banned_until && Date.parse(user.banned_until) > Date.now() ? 'suspended' : 'active',
-        joined: user.created_at,
-      };
-    });
-
+    const users = (authData?.users || []).map((u: any) => ({
+      id: u.id,
+      name: u.user_metadata?.name || u.email?.split('@')[0],
+      email: u.email,
+      role: u.user_metadata?.role || 'user',
+      status: u.banned_until && Date.parse(u.banned_until) > Date.now() ? 'suspended' : 'active',
+      joined: u.created_at,
+    }));
     return NextResponse.json({ users }, { headers: { 'Cache-Control': 'no-store, max-age=0' } });
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'Failed to load users.';
-    console.error('Admin users GET error:', message);
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }
@@ -56,32 +42,33 @@ export async function PATCH(request: NextRequest) {
   try {
     const auth = await getAuthorizedAdmin();
     if (auth.response) return auth.response;
-
-    const body = await request.json();
-    if (typeof body.id !== 'string' || typeof body.suspended !== 'boolean') {
-      return NextResponse.json({ error: 'User ID and suspension status are required.' }, { status: 400 });
+    const { id, suspended } = await request.json();
+    if (typeof id !== 'string' || typeof suspended !== 'boolean') {
+      return NextResponse.json({ error: 'User ID and suspended status are required.' }, { status: 400 });
     }
-
-    const { data: targetProfile, error: profileError } = await (auth.adminClient!.from('profiles') as any)
-      .select('role')
-      .eq('id', body.id)
-      .maybeSingle();
-    if (profileError) throw profileError;
-    if (!targetProfile) return NextResponse.json({ error: 'User profile not found.' }, { status: 404 });
-    if (targetProfile.role === 'admin') return NextResponse.json({ error: 'Administrator accounts cannot be suspended here.' }, { status: 400 });
-
-    const { data, error } = await auth.adminClient!.auth.admin.updateUserById(body.id, {
-      ban_duration: body.suspended ? '876000h' : 'none',
-    });
+    const banned_until = suspended ? new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString() : null;
+    const { data, error } = await auth.adminClient!.auth.admin.updateUserById(id, { ban_duration: suspended ? '365d' : '0s' });
     if (error) throw error;
-
-    return NextResponse.json({
-      success: true,
-      status: data.user.banned_until && Date.parse(data.user.banned_until) > Date.now() ? 'suspended' : 'active',
-    });
+    return NextResponse.json({ success: true, status: suspended ? 'suspended' : 'active' });
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'Failed to update user status.';
-    console.error('Admin users PATCH error:', message);
+    return NextResponse.json({ error: message }, { status: 500 });
+  }
+}
+
+export async function DELETE(request: NextRequest) {
+  try {
+    const auth = await getAuthorizedAdmin();
+    if (auth.response) return auth.response;
+    const { id } = await request.json();
+    if (typeof id !== 'string') {
+      return NextResponse.json({ error: 'A user ID is required.' }, { status: 400 });
+    }
+    const { error } = await auth.adminClient!.auth.admin.deleteUser(id);
+    if (error) throw error;
+    return NextResponse.json({ success: true, message: 'User account deleted successfully.' });
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'Failed to delete user account.';
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }

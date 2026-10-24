@@ -1,8 +1,9 @@
 'use client';
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { Suspense, useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
+import { useSearchParams } from 'next/navigation';
 import {
   Navigation,
   ArrowRight,
@@ -13,13 +14,99 @@ import {
   Clock,
   Star,
   Loader2,
+  Car,
+  Bike,
+  Footprints,
+  MapPin,
+  Coins,
+  Home,
+  CircleDot,
 } from 'lucide-react';
 import { MapView, getBeachPinColor } from '@/components/map/map-view';
 import type { BeachRecord } from '@/lib/db/beaches';
 import type { RouteResult } from '@/lib/db/routing';
 import { SeaRoute, ShorelineMarker } from '@/components/ui/coastal-icons';
 
-export default function InteractiveMapPage() {
+// Helper functions for parsing beach data
+function parseOpeningHours(openingHours: string | any): { isOpen: boolean; status: string } {
+  try {
+    const hours = typeof openingHours === 'string' ? JSON.parse(openingHours) : openingHours;
+    const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    const today = days[new Date().getDay()];
+    const todayHours = hours?.[today];
+    
+    if (!todayHours) {
+      return { isOpen: false, status: 'Closed' };
+    }
+    
+    // Extract closing time
+    const closingMatch = todayHours.match(/(\d{1,2}:\d{2}\s*[AP]M)/i);
+    const closingTime = closingMatch ? closingMatch[1] : '';
+    
+    return {
+      isOpen: true,
+      status: closingTime ? `Open now · closes ${closingTime}` : 'Open now'
+    };
+  } catch {
+    return { isOpen: false, status: 'Closed' };
+  }
+}
+
+function parseEntranceFee(entranceFee: string | null, adults: string | null | undefined, children: string | null | undefined): string {
+  if (adults && children) {
+    return `Adults ₱${adults}, Children ₱${children}`;
+  }
+  if (!entranceFee) return 'Not set';
+  if (entranceFee.includes('|')) {
+    const [adults, children] = entranceFee.split('|');
+    return `Adults ₱${adults}, Children ₱${children}`;
+  }
+  return `₱${entranceFee}`;
+}
+
+function parseCottageFee(cottageFee: string | null): string {
+  if (!cottageFee) return '';
+  const num = parseFloat(cottageFee.replace(/[^\d.]/g, ''));
+  if (isNaN(num)) return `₱${cottageFee}`;
+  return `From ₱${num.toLocaleString()}`;
+}
+
+function parseOpeningHoursFull(openingHours: string | any): { day: string; time: string }[] {
+  try {
+    const hours = typeof openingHours === 'string' ? JSON.parse(openingHours) : openingHours;
+    const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+    
+    // Group consecutive days with same time
+    const groups: { time: string; days: string[] }[] = [];
+    let currentGroup: { time: string; days: string[] } | null = null;
+    
+    days.forEach(day => {
+      const time = hours?.[day] || 'Closed';
+      if (!currentGroup || currentGroup.time !== time) {
+        if (currentGroup) groups.push(currentGroup);
+        currentGroup = { time, days: [day] };
+      } else {
+        currentGroup.days.push(day);
+      }
+    });
+    if (currentGroup) groups.push(currentGroup);
+    
+    // Convert groups to day ranges
+    return groups.map(group => {
+      const dayRange = group.days.length === 1 
+        ? group.days[0] 
+        : `${group.days[0]} - ${group.days[group.days.length - 1]}`;
+      return { day: dayRange, time: group.time };
+    });
+  } catch {
+    return [];
+  }
+}
+
+function InteractiveMapContent() {
+  const searchParams = useSearchParams();
+  const beachIdFromUrl = searchParams.get('beach');
+
   const [beaches, setBeaches] = useState<BeachRecord[]>([]);
   const [loadingBeaches, setLoadingBeaches] = useState(true);
 
@@ -27,6 +114,7 @@ export default function InteractiveMapPage() {
   const [locating, setLocating] = useState(false);
   const [locationError, setLocationError] = useState<string | null>(null);
   const [selectedBeach, setSelectedBeach] = useState<BeachRecord | null>(null);
+  const [watchId, setWatchId] = useState<number | null>(null);
 
   // Search filter
   const [searchQuery, setSearchQuery] = useState('');
@@ -35,36 +123,91 @@ export default function InteractiveMapPage() {
   const [routeActive, setRouteActive] = useState(false);
   const [routeData, setRouteData] = useState<RouteResult | null>(null);
   const [routingLoading, setRoutingLoading] = useState(false);
-  const [travelMode, setTravelMode] = useState<'car' | 'motorcycle'>('car');
+  const [travelMode, setTravelMode] = useState<'car' | 'motorcycle' | 'walking'>('car');
 
   // 1. Fetch real beaches from database API
   useEffect(() => {
-    fetch('/api/beaches')
-      .then((res) => res.json())
-      .then((data) => {
-        if (Array.isArray(data)) {
-          setBeaches(data);
-        }
-      })
-      .catch((err) => {
-        console.error('Failed to load beaches:', err);
-      })
-      .finally(() => {
-        setLoadingBeaches(false);
-      });
+    const fetchBeaches = () => {
+      fetch('/api/beaches')
+        .then((res) => res.json())
+        .then((data) => {
+          if (Array.isArray(data)) {
+            setBeaches(data);
+          }
+        })
+        .catch((err) => {
+          console.error('Failed to load beaches:', err);
+        })
+        .finally(() => {
+          setLoadingBeaches(false);
+        });
+    };
+
+    fetchBeaches();
+
+    // Poll for updates every 10 seconds
+    const interval = setInterval(fetchBeaches, 10000);
+
+    // Refresh when page becomes visible (user switches back to tab)
+    const handleVisibilityChange = () => {
+      if (!document.hidden) {
+        fetchBeaches();
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      clearInterval(interval);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
   }, []);
 
-  // 2. Geolocation handler
+  // Auto-select beach from URL parameter
+  useEffect(() => {
+    if (beachIdFromUrl && beaches.length > 0) {
+      const beach = beaches.find((b) => b.id === beachIdFromUrl);
+      if (beach) {
+        setSelectedBeach(beach);
+      }
+    }
+  }, [beachIdFromUrl, beaches]);
+
+  // Update selectedBeach when beaches data changes (for real-time updates)
+  useEffect(() => {
+    if (selectedBeach && beaches.length > 0) {
+      const updatedBeach = beaches.find((b) => b.id === selectedBeach.id);
+      console.log('Map page - Checking for update:', {
+        selectedBeachId: selectedBeach.id,
+        foundUpdatedBeach: !!updatedBeach,
+        currentEntranceFee: selectedBeach.entrance_fee_adults,
+        newEntranceFee: updatedBeach?.entrance_fee_adults,
+        currentOpeningHours: selectedBeach.opening_hours,
+        newOpeningHours: updatedBeach?.opening_hours,
+      });
+      if (updatedBeach) {
+        setSelectedBeach(updatedBeach);
+      }
+    }
+  }, [beaches]);
+
+  // 2. Geolocation handler with real-time tracking
   const handleLocateMe = (onSuccess?: (loc: { lat: number; lng: number }) => void) => {
     if (!navigator.geolocation) {
       setLocationError('Geolocation is not supported by your browser.');
       return;
     }
 
+    // Stop existing watch if any
+    if (watchId !== null) {
+      navigator.geolocation.clearWatch(watchId);
+      setWatchId(null);
+    }
+
     setLocating(true);
     setLocationError(null);
 
-    navigator.geolocation.getCurrentPosition(
+    // Use watchPosition for real-time tracking
+    const id = navigator.geolocation.watchPosition(
       (position) => {
         const loc = {
           lat: position.coords.latitude,
@@ -77,13 +220,40 @@ export default function InteractiveMapPage() {
         }
       },
       (error) => {
-        console.warn('Geolocation error:', error.message);
-        setLocationError('Unable to detect location. Please check your browser location permissions.');
+        console.warn('Geolocation error:', error);
+        let errorMsg = 'Unable to detect location.';
+        
+        switch (error.code) {
+          case error.PERMISSION_DENIED:
+            errorMsg = 'Location permission denied. Please enable location access in your browser settings.';
+            break;
+          case error.POSITION_UNAVAILABLE:
+            errorMsg = 'Location information is unavailable. Please try again.';
+            break;
+          case error.TIMEOUT:
+            errorMsg = 'Location request timed out. Please try again.';
+            break;
+          default:
+            errorMsg = 'Unable to detect location. Please check your browser location permissions.';
+        }
+        
+        setLocationError(errorMsg);
         setLocating(false);
       },
-      { enableHighAccuracy: true, timeout: 10000 }
+      { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
     );
+
+    setWatchId(id);
   };
+
+  // Cleanup watch on unmount
+  useEffect(() => {
+    return () => {
+      if (watchId !== null) {
+        navigator.geolocation.clearWatch(watchId);
+      }
+    };
+  }, [watchId]);
 
   // 3. Real road route calculation using OSRM engine
   const executeRouteCalculation = async (
@@ -121,6 +291,20 @@ export default function InteractiveMapPage() {
       setRoutingLoading(false);
     }
   };
+
+  // Auto-calculate route when beach is selected (if GPS is available)
+  useEffect(() => {
+    if (selectedBeach && userLocation && !routeActive) {
+      executeRouteCalculation(userLocation, selectedBeach);
+    }
+  }, [selectedBeach?.id, userLocation]);
+
+  // Recalculate route when GPS location changes (if route is active)
+  useEffect(() => {
+    if (routeActive && selectedBeach && userLocation) {
+      executeRouteCalculation(userLocation, selectedBeach);
+    }
+  }, [userLocation]);
 
   const handleCalculateRoute = () => {
     if (!selectedBeach) return;
@@ -191,7 +375,7 @@ export default function InteractiveMapPage() {
 
       {/* Geolocation Notice if Error */}
       {locationError && (
-        <div className="absolute top-18 sm:top-20 left-1/2 -translate-x-1/2 z-30 max-w-md w-[90%] bg-amber-700 text-white text-xs font-medium px-4 py-2.5 rounded-xl shadow-md flex items-center justify-between pointer-events-auto">
+        <div className="absolute top-18 sm:top-20 left-1/2 -translate-x-1/2 z-30 max-w-md w-[90%] bg-amber-700 text-white text-xs font-medium px-4 py-2.5 rounded-xl shadow-md flex items-center justify-between gap-3 pointer-events-auto">
           <div className="flex items-center gap-2">
             <AlertCircle className="w-4 h-4 flex-shrink-0" />
             <span>{locationError}</span>
@@ -232,8 +416,11 @@ export default function InteractiveMapPage() {
                 {routeData.provider === 'Geodesic Calculation' && (
                   <p className="text-[11px] text-amber-200">Road routing is unavailable. Distance is straight-line and travel time is approximate.</p>
                 )}
-                {routeData.durationIsEstimated && routeData.provider !== 'Geodesic Calculation' && (
+                {routeData.durationIsEstimated && routeData.provider !== 'Geodesic Calculation' && routeData.travelMode === 'Motorcycle' && (
                   <p className="text-[11px] text-sky-100">Motorcycle travel time is estimated from routed road distance.</p>
+                )}
+                {routeData.durationIsEstimated && routeData.provider !== 'Geodesic Calculation' && routeData.travelMode === 'Walking' && (
+                  <p className="text-[11px] text-sky-100">Walking time is estimated from routed distance.</p>
                 )}
               </div>
             </div>
@@ -296,16 +483,9 @@ export default function InteractiveMapPage() {
             <div className="p-4 pt-1 space-y-3">
               {/* Header & Close */}
               <div className="flex items-start justify-between gap-3">
-                <div className="space-y-0.5">
-                  <h3 className="font-bold text-base text-ocean-950 dark:text-sand-50 font-sans">
-                    {selectedBeach.name}
-                  </h3>
-                  <div className="flex items-center gap-2 text-xs text-sand-600 dark:text-sand-400">
-                    <Clock size={13} className="text-ocean-700 dark:text-ocean-400" />
-                    <span>{selectedBeach.opening_hours}</span>
-                  </div>
-                </div>
-
+                <h3 className="font-bold text-base text-ocean-950 dark:text-sand-50 font-sans flex-1">
+                  {selectedBeach.name}
+                </h3>
                 <button
                   type="button"
                   onClick={() => setSelectedBeach(null)}
@@ -316,55 +496,97 @@ export default function InteractiveMapPage() {
                 </button>
               </div>
 
-              {/* Short Useful Description */}
-              <p className="text-xs text-sand-700 dark:text-sand-300 line-clamp-2 leading-relaxed">
-                {selectedBeach.description}
-              </p>
+              {/* Info box with Entrance only */}
+              <div className="rounded-xl border border-sand-200 dark:border-ocean-800 p-3 space-y-2">
+                {selectedBeach.entrance_fee && (
+                  <div className="flex items-center gap-3 text-xs">
+                    <Coins className="w-4 h-4 text-ocean-700 dark:text-ocean-400 flex-shrink-0" />
+                    <span className="w-16 font-semibold text-ocean-950 dark:text-sand-200">Entrance</span>
+                    <span className="text-sand-600 dark:text-sand-400">{parseEntranceFee(selectedBeach.entrance_fee, selectedBeach.entrance_fee_adults, selectedBeach.entrance_fee_children)}</span>
+                  </div>
+                )}
+              </div>
 
-              {/* Fee Information */}
-              {(selectedBeach.entrance_fee || selectedBeach.cottage_fee) && (
-                <div className="text-[11px] text-sand-600 dark:text-sand-400 bg-sand-100 dark:bg-ocean-950/70 p-2 rounded-xl border border-sand-200 dark:border-ocean-800 space-y-0.5">
-                  {selectedBeach.entrance_fee && (
-                    <div>
-                      <span className="font-semibold text-ocean-950 dark:text-sand-200">Entrance: </span>
-                      <span>{selectedBeach.entrance_fee}</span>
+              {/* Opening hours with two-column grid */}
+              <div className="rounded-xl border border-sand-200 dark:border-ocean-800 p-3">
+                <div className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1.5">
+                  {parseOpeningHoursFull(selectedBeach.opening_hours).map((item) => (
+                    <React.Fragment key={item.day}>
+                      <span className="text-xs font-semibold text-ocean-950 dark:text-sand-200">{item.day}</span>
+                      <span className="text-xs text-sand-600 dark:text-sand-400 text-right">{item.time}</span>
+                    </React.Fragment>
+                  ))}
+                </div>
+              </div>
+
+              {/* Travel mode with icons */}
+              <div className="flex items-center gap-2" role="group" aria-label="Travel mode">
+                <button
+                  type="button"
+                  onClick={() => setTravelMode('car')}
+                  aria-pressed={travelMode === 'car'}
+                  className={`flex-1 rounded-lg border px-3 py-2 text-xs font-semibold flex items-center justify-center gap-1.5 ${travelMode === 'car' ? 'border-ocean-900 bg-ocean-900 text-white' : 'border-sand-300 text-ocean-900 dark:text-sand-100'}`}
+                >
+                  <Car className="w-3.5 h-3.5" />
+                  <span>Car</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setTravelMode('motorcycle')}
+                  aria-pressed={travelMode === 'motorcycle'}
+                  className={`flex-1 rounded-lg border px-3 py-2 text-xs font-semibold flex items-center justify-center gap-1.5 ${travelMode === 'motorcycle' ? 'border-ocean-900 bg-ocean-900 text-white' : 'border-sand-300 text-ocean-900 dark:text-sand-100'}`}
+                >
+                  <Bike className="w-3.5 h-3.5" />
+                  <span>Motorcycle</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setTravelMode('walking')}
+                  aria-pressed={travelMode === 'walking'}
+                  className={`flex-1 rounded-lg border px-3 py-2 text-xs font-semibold flex items-center justify-center gap-1.5 ${travelMode === 'walking' ? 'border-ocean-900 bg-ocean-900 text-white' : 'border-sand-300 text-ocean-900 dark:text-sand-100'}`}
+                >
+                  <Footprints className="w-3.5 h-3.5" />
+                  <span>Walking</span>
+                </button>
+              </div>
+
+              {/* Result strip - shows only after route calculation */}
+              {routeActive && routeData && (
+                <div className="rounded-xl bg-ocean-900/95 text-sand-50 p-3 flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <SeaRoute size={16} />
+                    <div className="space-y-0.5">
+                      <div className="text-[10px] font-semibold text-sky-400 uppercase tracking-wider">
+                        {routeData.travelMode}
+                      </div>
+                      <div className="text-xs font-bold">
+                        {routeData.distanceKm} km · {routeData.durationFormatted}
+                      </div>
                     </div>
-                  )}
-                  {selectedBeach.cottage_fee && (
-                    <div>
-                      <span className="font-semibold text-ocean-950 dark:text-sand-200">Cottages: </span>
-                      <span>{selectedBeach.cottage_fee}</span>
-                    </div>
-                  )}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleClearRoute}
+                    className="text-sand-400 hover:text-white p-1"
+                    aria-label="Clear route"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
                 </div>
               )}
 
-              <div className="flex items-center gap-2" role="group" aria-label="Travel mode">
-                {(['car', 'motorcycle'] as const).map((mode) => (
-                  <button
-                    key={mode}
-                    type="button"
-                    onClick={() => setTravelMode(mode)}
-                    aria-pressed={travelMode === mode}
-                    className={`flex-1 rounded-lg border px-3 py-2 text-xs font-semibold capitalize ${travelMode === mode ? 'border-ocean-900 bg-ocean-900 text-white' : 'border-sand-300 text-ocean-900 dark:text-sand-100'}`}
-                  >
-                    {mode}
-                  </button>
-                ))}
-              </div>
-
-              {/* Route and destination actions */}
+              {/* Action row with two equal buttons */}
               <div className="flex items-center gap-2 pt-1">
-                {/* 1st button: View Details */}
+                {/* View Details button (secondary/outlined) */}
                 <Link
                   href={`/beaches/${selectedBeach.slug}`}
-                  className="flex-1 inline-flex items-center justify-center gap-1.5 py-2.5 px-3 bg-sand-200 hover:bg-sand-300 dark:bg-ocean-800 dark:hover:bg-ocean-700 text-ocean-950 dark:text-sand-100 text-xs font-bold rounded-xl transition-colors text-center"
+                  className="flex-1 inline-flex items-center justify-center gap-1.5 py-2.5 px-3 border border-ocean-900 bg-transparent hover:bg-sand-100 dark:border-sand-100 dark:hover:bg-ocean-800 text-ocean-900 dark:text-sand-100 text-xs font-bold rounded-xl transition-colors text-center"
                 >
                   <span>View Details</span>
                   <ArrowRight className="w-3.5 h-3.5" />
                 </Link>
 
-                {/* 2nd button: Calculate Route */}
+                {/* Calculate Route button (primary/filled) */}
                 <button
                   type="button"
                   onClick={handleCalculateRoute}
@@ -384,5 +606,13 @@ export default function InteractiveMapPage() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function InteractiveMapPage() {
+  return (
+    <Suspense fallback={<div className="h-screen" />}>
+      <InteractiveMapContent />
+    </Suspense>
   );
 }

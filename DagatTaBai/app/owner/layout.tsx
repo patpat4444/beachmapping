@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { usePathname } from 'next/navigation';
 import { AppShell } from '@/components/owner/AppShell';
 import type { BeachRecord } from '@/lib/db/beaches';
+import { formatOpeningHours } from '@/lib/utils/formatOpeningHours';
 
 export default function OwnerLayout({
   children,
@@ -48,8 +49,9 @@ export default function OwnerLayout({
       beachName={beach?.name || 'Catmon Beach Resort'}
       beachSlug={beach?.slug || beach?.id}
       isOpenNow={true}
-      openingHours={beach?.opening_hours || '8:00 AM – 6:00 PM'}
+      openingHours={beach ? formatOpeningHours(beach.opening_hours) : '8:00 AM – 6:00 PM'}
       reviewCount={reviewCount}
+      unreadNotifications={0}
     >
       {children}
     </AppShell>

@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { createAdminClient } from '@/lib/supabase/server';
+import { createAdminClient, createServerSupabaseClient } from '@/lib/supabase/server';
 import { hashPin } from '@/lib/services/pin';
 
 export async function POST(request: Request) {
@@ -31,15 +31,43 @@ export async function POST(request: Request) {
         );
       }
 
+      // Whitelist of allowed admin emails - only these 3 users can access admin portal
+      const allowedAdminEmails = process.env.ADMIN_ALLOWED_EMAILS?.split(',').map(e => e.trim().toLowerCase()) || [
+        'official.dagattabai@gmail.com',
+        'admin@dagattabai.ph'
+      ];
+
       const adminEmail = 'official.dagattabai@gmail.com';
       const previousAdminEmail = 'admin@dagattabai.ph';
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      let { data: adminProfile } = await (adminSupabase.from('profiles') as any)
+      const { data: adminProfiles, error: adminLookupError } = await (adminSupabase.from('profiles') as any)
         .select('id, email, full_name, role, pin')
         .or(`email.eq.${adminEmail},email.eq.${previousAdminEmail},full_name.eq.Administrator,full_name.eq.administrator`)
-        .in('role', ['admin', 'beach_manager'])
-        .maybeSingle();
+        .in('role', ['admin', 'beach_manager']);
+
+      if (adminLookupError) {
+        console.error('Admin lookup error:', adminLookupError);
+        throw adminLookupError;
+      }
+
+      const matchedProfiles = Array.isArray(adminProfiles) ? adminProfiles : [];
+      let adminProfile =
+        matchedProfiles.find((profile: { email?: string }) => (profile.email || '').toLowerCase() === adminEmail) ||
+        matchedProfiles.find((profile: { role?: string }) => profile.role === 'admin') ||
+        matchedProfiles[0] ||
+        null;
+
+      // Ensure auth user exists and has correct password
+      let authUser = null;
+      try {
+        const { data: existingUsers } = await adminSupabase.auth.admin.listUsers();
+        authUser = existingUsers?.users?.find(
+          (user) => [adminEmail, previousAdminEmail].includes(user.email?.toLowerCase() || '')
+        );
+      } catch (e) {
+        console.error('Auth list users error:', e);
+      }
 
       if (!adminProfile || !adminProfile.id) {
         const initialAdminPin = process.env.ADMIN_INITIAL_PIN;
@@ -53,14 +81,9 @@ export async function POST(request: Request) {
           return NextResponse.json({ error: 'Invalid 6-digit Admin PIN. Access denied.' }, { status: 401 });
         }
 
-        const { data: existingUser } = await adminSupabase.auth.admin.listUsers();
-        const matched = existingUser?.users?.find(
-          (user) => [adminEmail, previousAdminEmail].includes(user.email?.toLowerCase() || '')
-        );
-
-        if (matched) {
+        if (authUser) {
           adminProfile = {
-            id: matched.id,
+            id: authUser.id,
             email: adminEmail,
             full_name: 'Administrator',
             role: 'admin',
@@ -96,23 +119,39 @@ export async function POST(request: Request) {
           updated_at: new Date().toISOString(),
         });
         if (profileUpsertError) throw profileUpsertError;
+      } else if (authUser) {
+        // Update auth user password to match the PIN
+        const { error: passwordUpdateError } = await adminSupabase.auth.admin.updateUserById(
+          authUser.id,
+          { password: cleanPin }
+        );
+        if (passwordUpdateError) {
+          console.error('Failed to update auth user password:', passwordUpdateError);
+        }
       }
 
       const storedPin = adminProfile.pin || '';
+      const initialAdminPin = process.env.ADMIN_INITIAL_PIN;
+      
+      // Allow login if PIN matches stored hash, or if stored PIN is empty and matches initial PIN
       if (storedPin !== pinHash && storedPin !== cleanPin) {
-        return NextResponse.json(
-          { error: 'Invalid 6-digit Admin PIN. Access denied.' },
-          { status: 401 }
-        );
+        if (!storedPin && initialAdminPin && cleanPin === initialAdminPin) {
+          // Allow login if no PIN is set and the entered PIN matches the initial PIN
+        } else {
+          return NextResponse.json(
+            { error: 'Invalid 6-digit Admin PIN. Access denied.' },
+            { status: 401 }
+          );
+        }
       }
 
-      if (storedPin !== pinHash) {
-        const { error: pinUpdateError } = await (adminSupabase.from('profiles') as any)
-          .update({ pin: pinHash, updated_at: new Date().toISOString() })
-          .eq('id', adminProfile.id);
-        if (pinUpdateError) throw pinUpdateError;
-      }
+      // Always update the PIN in database to ensure consistency
+      const { error: pinUpdateError } = await (adminSupabase.from('profiles') as any)
+        .update({ pin: pinHash, updated_at: new Date().toISOString() })
+        .eq('id', adminProfile.id);
+      if (pinUpdateError) throw pinUpdateError;
 
+      // Always update the password in Supabase auth
       const { error: passwordSyncError } = await adminSupabase.auth.admin.updateUserById(
         adminProfile.id,
         { email: adminEmail, email_confirm: true, password: cleanPin }
@@ -122,11 +161,39 @@ export async function POST(request: Request) {
       }
 
       const { error: adminEmailSyncError } = await (adminSupabase.from('profiles') as any)
-        .update({ email: adminEmail, updated_at: new Date().toISOString() })
+        .update({
+          email: adminEmail,
+          role: 'admin',
+          full_name: 'Administrator',
+          updated_at: new Date().toISOString(),
+        })
         .eq('id', adminProfile.id);
       if (adminEmailSyncError) throw adminEmailSyncError;
 
       const email = adminEmail;
+
+      // Verify the admin email is in the allowed whitelist
+      if (!allowedAdminEmails.includes(email.toLowerCase())) {
+        return NextResponse.json(
+          { error: 'Access denied. Your email is not authorized for admin access.' },
+          { status: 403 }
+        );
+      }
+
+      // Sign in with Supabase auth to create a session using server client to set cookies
+      const supabase = await createServerSupabaseClient();
+      const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
+        email: adminEmail,
+        password: cleanPin,
+      });
+
+      if (signInError || !signInData.session) {
+        console.error('Supabase sign in error:', signInError);
+        return NextResponse.json(
+          { error: 'Failed to establish admin session. Please try again.' },
+          { status: 500 }
+        );
+      }
 
       return NextResponse.json({
         success: true,

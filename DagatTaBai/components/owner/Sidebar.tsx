@@ -13,6 +13,7 @@ import {
   LogOut,
   X,
   ExternalLink,
+  Bell,
 } from 'lucide-react';
 import { ThemeToggle } from '@/components/owner/ThemeToggle';
 import { createClient } from '@/lib/supabase/client';
@@ -23,6 +24,7 @@ interface SidebarProps {
   reviewCount?: number;
   beachSlug?: string;
   beachName?: string;
+  unreadNotifications?: number;
 }
 
 export function Sidebar({
@@ -31,6 +33,7 @@ export function Sidebar({
   reviewCount = 0,
   beachSlug,
   beachName = 'Catmon Beach Resort',
+  unreadNotifications = 0,
 }: SidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
@@ -177,6 +180,20 @@ export function Sidebar({
                 </Link>
               );
             })}
+
+            {/* Notifications Item */}
+            {unreadNotifications > 0 && (
+              <div className="px-4 py-3 rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800">
+                <div className="flex items-center gap-3">
+                  <Bell className="w-5 h-5 text-amber-600 dark:text-amber-400" strokeWidth={1.75} />
+                  <div className="flex-1">
+                    <p className="text-sm font-medium text-gray-900 dark:text-white">
+                      {unreadNotifications} new notification{unreadNotifications > 1 ? 's' : ''}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
           </nav>
 
           {/* Ghost button: View Public Page */}

@@ -187,44 +187,31 @@ async function sendOwnerWelcomeEmail({
     await transporter.sendMail({
         from: `"${process.env.MAIL_FROM_NAME || 'Dagat Ta Bai'}" <${process.env.MAIL_FROM_ADDRESS || mailUser}>`,
         to: recipientEmail,
-        subject: 'Approved: Your Dagat Ta Bai 6-Digit Beach Owner PIN',
+        subject: 'Your Dagat Ta Bai Owner PIN',
         html: `
-          <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; border: 1px solid #e2e8f0; border-radius: 16px; background-color: #ffffff;">
-            <div style="margin-bottom: 20px;">
-              <span style="font-size: 20px; font-weight: 800; color: #0284c7;">Dagat Ta Bai</span>
-              <span style="font-size: 11px; background: #e0f2fe; color: #0369a1; padding: 2px 8px; border-radius: 9999px; margin-left: 8px; font-weight: 700; text-transform: uppercase;">Owner Access</span>
-            </div>
-
-            <h2 style="color: #0f172a; margin-top: 0;">Congratulations, ${recipientName}!</h2>
-            <p style="color: #475569; font-size: 14px; line-height: 1.6;">
-              Your application to register your beach resort has been <strong>approved</strong> by the platform administration.
+          <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 500px; margin: 0 auto; padding: 20px; background-color: #ffffff;">
+            <h2 style="color: #0f172a; margin: 0 0 16px 0; font-size: 18px;">Application Approved</h2>
+            <p style="color: #475569; font-size: 14px; line-height: 1.5; margin: 0 0 20px 0;">
+              Your beach owner application has been approved. Use this PIN to log in:
             </p>
 
-            <div style="background-color: #f8fafc; border: 2px dashed #0284c7; padding: 20px; border-radius: 12px; margin: 24px 0; text-align: center;">
-              <div style="font-size: 11px; font-weight: 800; color: #0369a1; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px;">
-                Your Randomized 6-Digit Login PIN
+            <div style="background-color: #f1f5f9; border: 2px solid #0284c7; padding: 24px; border-radius: 12px; margin: 20px 0; text-align: center;">
+              <div style="font-size: 10px; font-weight: 700; color: #0369a1; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px;">
+                Your 6-Digit PIN
               </div>
-              <div style="font-size: 36px; font-weight: 900; letter-spacing: 8px; color: #0f172a; font-family: monospace;">
+              <div style="font-size: 40px; font-weight: 900; letter-spacing: 6px; color: #0f172a; font-family: monospace;">
                 ${pin}
               </div>
-              <div style="font-size: 11px; color: #64748b; margin-top: 6px;">
-                Keep this 6-digit PIN secure. Use it with your email to access the Owner Portal.
-              </div>
             </div>
 
-            <p style="color: #475569; font-size: 14px; line-height: 1.6;">
-              You can now log in to the Staff &amp; Owner portal to manage your beach listings, upload verified shoreline photos, and update cottage fees:
-            </p>
-
-            <div style="text-align: center; margin: 28px 0;">
-              <a href="${loginUrl}" style="background-color: #0284c7; color: #ffffff; padding: 12px 28px; text-decoration: none; border-radius: 10px; font-size: 13px; font-weight: 700; display: inline-block;">
-                Log In to Staff &amp; Owner Portal
+            <div style="text-align: center; margin: 24px 0;">
+              <a href="${loginUrl}" style="background-color: #0284c7; color: #ffffff; padding: 12px 24px; text-decoration: none; border-radius: 8px; font-size: 14px; font-weight: 600; display: inline-block;">
+                Log In to Owner Portal
               </a>
             </div>
 
-            <p style="font-size: 12px; color: #94a3b8; line-height: 1.5; margin-top: 30px; border-top: 1px solid #f1f5f9; padding-top: 16px;">
-              Direct Portal Link: <a href="${loginUrl}" style="color: #0284c7;">${loginUrl}</a><br/>
-              Dagat Ta Bai · Local Coastal Directory &amp; Intelligence · Catmon, Cebu
+            <p style="font-size: 11px; color: #94a3b8; margin-top: 24px; padding-top: 16px; border-top: 1px solid #f1f5f9;">
+              <a href="${loginUrl}" style="color: #0284c7;">${loginUrl}</a>
             </p>
           </div>
         `,

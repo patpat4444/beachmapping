@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { createAdminClient } from '@/lib/supabase/server';
 import { authorizeRoles } from '@/lib/supabase/authorization';
 
 export async function GET() {
@@ -34,6 +35,23 @@ export async function PATCH(request: NextRequest) {
     return NextResponse.json({ success: true, beach: data });
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'Failed to update beach status.';
+    return NextResponse.json({ error: message }, { status: 500 });
+  }
+}
+
+export async function DELETE(request: NextRequest) {
+  try {
+    const auth = await authorizeRoles(['admin']);
+    if (!auth.authorized) return NextResponse.json({ error: auth.message }, { status: auth.status });
+    const { id } = await request.json();
+    if (typeof id !== 'string') {
+      return NextResponse.json({ error: 'A beach ID is required.' }, { status: 400 });
+    }
+    const { error } = await (auth.adminClient.from('beaches') as any).delete().eq('id', id);
+    if (error) throw error;
+    return NextResponse.json({ success: true, message: 'Beach listing deleted successfully.' });
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'Failed to delete beach listing.';
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }

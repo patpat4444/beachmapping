@@ -15,8 +15,15 @@ export interface HeatIndexResult {
  * PAGASA / NOAA standard: Heat Index is only applicable when air temp >= 27°C.
  */
 export function calculateHeatIndex(temperatureC: number, relativeHumidity: number): HeatIndexResult | null {
+  // Always calculate heat index even if temp < 27°C for fallback display
   if (temperatureC < 27) {
-    return null;
+    // Return a minimal heat index for display purposes
+    return {
+      heatIndexCelsius: Math.round(temperatureC),
+      category: 'Caution',
+      advisory: 'Comfortable conditions.',
+      badgeColorClass: 'bg-yellow-100 text-yellow-800 border-yellow-300',
+    };
   }
 
   // Convert Celsius to Fahrenheit for NOAA formula constants

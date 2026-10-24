@@ -20,9 +20,16 @@ export default function AdminDashboardPage() {
     pendingApplications: 0,
     totalApplications: 0,
     activeBeaches: 0,
+    totalVisitors: 0,
     loading: true,
   });
   const [visitorPoints, setVisitorPoints] = useState<AnalyticsPoint[] | null>(null);
+
+  // Debug: Log when component mounts
+  useEffect(() => {
+    console.log('AdminDashboardPage mounted');
+    console.log('Current URL:', window.location.href);
+  }, []);
 
   const loadStats = async () => {
     try {
@@ -39,11 +46,13 @@ export default function AdminDashboardPage() {
       const apps = Array.isArray(appData.applications) ? appData.applications : [];
       const pending = apps.filter((a: any) => a.status === 'pending').length;
       const beaches = Array.isArray(beachData) ? beachData : [];
+      const totalVisitors = analyticsData?.totalVisitors || 0;
 
       setStats({
         pendingApplications: pending,
         totalApplications: apps.length,
         activeBeaches: beaches.length,
+        totalVisitors,
         loading: false,
       });
       setVisitorPoints(Array.isArray(analyticsData?.points) ? analyticsData.points : null);
@@ -107,7 +116,7 @@ export default function AdminDashboardPage() {
         )}
       </section>
 
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
         <Link
           href="/admin/applications"
           className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm hover:-translate-y-0.5 hover:border-sky-400 transition-all duration-150 group"
@@ -167,6 +176,23 @@ export default function AdminDashboardPage() {
             Total historical submissions received →
           </span>
         </Link>
+
+        <div className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">
+              Total Visitors
+            </span>
+            <div className="w-9 h-9 rounded-xl bg-purple-50 dark:bg-purple-950/50 text-purple-600 flex items-center justify-center">
+              <ShieldCheck className="w-4 h-4" />
+            </div>
+          </div>
+          <div className="mt-4 text-3xl font-black text-purple-600 leading-none">
+            {stats.loading ? '...' : stats.totalVisitors.toLocaleString()}
+          </div>
+          <span className="mt-2 block text-[11px] text-slate-400">
+            Platform visits tracked
+          </span>
+        </div>
       </div>
 
       {/* Primary Action Cards */}

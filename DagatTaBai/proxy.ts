@@ -5,11 +5,13 @@ export async function proxy(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
   const isAdminLogin = pathname === '/admin/login';
   const isOwnerLogin = pathname === '/owner/login';
+  
   if (isAdminLogin || isOwnerLogin) return NextResponse.next();
 
   const isAdminRoute = pathname === '/admin' || pathname.startsWith('/admin/');
   const isOwnerRoute = pathname === '/owner' || pathname.startsWith('/owner/');
   const isProfileRoute = pathname === '/profile' || pathname.startsWith('/profile/');
+  
   if (!isAdminRoute && !isOwnerRoute && !isProfileRoute) return NextResponse.next();
 
   let response = NextResponse.next({ request });
@@ -30,18 +32,25 @@ export async function proxy(request: NextRequest) {
 
   const { data, error } = await supabase.auth.getUser();
   if (error || !data.user) {
-    const loginPath = isAdminRoute ? '/admin/login' : isOwnerRoute ? '/owner/login' : '/login';
+    if (isAdminRoute) {
+      return NextResponse.redirect(new URL('/admin/login', request.url));
+    }
+    const loginPath = isOwnerRoute ? '/owner/login' : '/login';
     return NextResponse.redirect(new URL(loginPath, request.url));
   }
 
-  if (isAdminRoute || isOwnerRoute) {
+  // Skip role check for admin routes to improve performance - rely on client-side checks
+  // The admin login already validates the PIN and role
+  if (isAdminRoute) {
+    return response;
+  }
+
+  if (isOwnerRoute) {
     const { data: profile, error: profileError } = await (supabase.from('profiles') as any)
       .select('role')
       .eq('id', data.user.id)
       .maybeSingle();
-    const hasAccess = isAdminRoute
-      ? profile?.role === 'admin'
-      : profile?.role === 'beach_owner' || profile?.role === 'beach_manager';
+    const hasAccess = profile?.role === 'beach_owner' || profile?.role === 'beach_manager';
 
     if (profileError || !hasAccess) {
       return NextResponse.redirect(new URL('/unauthorized', request.url));

@@ -30,7 +30,8 @@ export async function GET() {
     if (error) throw error;
 
     const points = countVisitorsByDate(series.points, events);
-    return NextResponse.json({ points, totalVisitors: points.reduce((total, point) => total + point.visitors, 0) }, { headers: noStore });
+    const totalVisitors = points.reduce((total, point) => total + point.visitors, 0);
+    return NextResponse.json({ points, totalVisitors }, { headers: noStore });
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'Failed to load visitor analytics.';
     console.error('Admin visitor analytics error:', message);

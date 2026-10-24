@@ -114,6 +114,15 @@ export function MapView({
     }
   }, [routeActive, routeCoordinates, center, zoom, L]);
 
+  // Center map on user location when it updates (if route is active)
+  useEffect(() => {
+    if (!mapRef.current || !L || !userLocation || !routeActive) return;
+    
+    mapRef.current.flyTo([userLocation.lat, userLocation.lng], 16, {
+      duration: 1,
+    });
+  }, [userLocation, routeActive, L]);
+
   if (!isClient || !L) {
     return (
       <div className="w-full h-full min-h-[400px] bg-sand-100 dark:bg-ocean-950 flex items-center justify-center">

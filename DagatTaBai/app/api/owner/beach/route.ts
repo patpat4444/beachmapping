@@ -10,7 +10,35 @@ function toOwnerBeach(row: any) {
     cover_image: row.cover_image_url || null,
     profile_image: row.profile_image_url || null,
     images: Array.isArray(row.images) ? row.images : [],
-    opening_hours: row.opening_hours || '8:00 AM - 6:00 PM',
+    opening_hours: (() => {
+      if (typeof row.opening_hours === 'string' && row.opening_hours.startsWith('{')) {
+        try {
+          return JSON.parse(row.opening_hours);
+        } catch {
+          return {
+            Mon: '',
+            Tue: '',
+            Wed: '',
+            Thu: '',
+            Fri: '',
+            Sat: '',
+            Sun: ''
+          };
+        }
+      }
+      if (typeof row.opening_hours === 'object') {
+        return row.opening_hours;
+      }
+      return {
+        Mon: '',
+        Tue: '',
+        Wed: '',
+        Thu: '',
+        Fri: '',
+        Sat: '',
+        Sun: ''
+      };
+    })(),
     entrance_fee: row.entrance_fee || null,
     cottage_fee: row.cottage_fee || null,
     rules: row.rules || null,
@@ -66,6 +94,7 @@ export async function POST(request: Request) {
     const parsedLatitude = Number(body.latitude);
     const parsedLongitude = Number(body.longitude);
     const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+    
     const beachPayload = {
       name,
       slug,
@@ -78,14 +107,20 @@ export async function POST(request: Request) {
       profile_image_url: body.profile_image || body.profile_image_url || null,
       virtual_tour_url: body.virtual_tour_url || null,
       images: Array.isArray(body.images) ? body.images : [],
-      opening_hours: body.opening_hours || '8:00 AM - 6:00 PM',
-      entrance_fee: body.entrance_fee || null,
+      opening_hours: typeof body.opening_hours === 'object' ? JSON.stringify(body.opening_hours) : (body.opening_hours || '8:00 AM - 6:00 PM'),
+      entrance_fee: `${body.entrance_fee_adults || ''}|${body.entrance_fee_children || ''}`,
       cottage_fee: body.cottage_fee || null,
       rules: body.rules || null,
       contact_phone: body.contact_phone || null,
       contact_email: body.contact_email || null,
+      status: 'active',
       updated_at: new Date().toISOString(),
     };
+
+    console.log('API /api/owner/beach - Saving to database:', {
+      opening_hours: beachPayload.opening_hours,
+      entrance_fee: beachPayload.entrance_fee,
+    });
 
     const adminSupabase = createAdminClient();
     let result;
